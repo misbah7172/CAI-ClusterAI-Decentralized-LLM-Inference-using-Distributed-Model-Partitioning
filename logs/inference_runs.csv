@@ -1,169 +1,39 @@
-timestamp,status,prompt,output,completion,model,tokens_generated,tokens_per_sec,duration_sec,device,model_cache_hit,kv_cache_enabled,cache_precision,kv_runtime_mode,kv_cache_hit,kv_cache_miss,kv_reused_prefix_tokens,kv_new_prefill_tokens,kv_prompt_tokens
-5/16/2026 1:41,stopped,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.By the end of this course,","By the end of this course,",tiiuae/falcon-7b,8,0.03653887,218.9439199,cuda:0,FALSE,TRUE,FP16,low_level_reuse,0,1,0,8,8
-5/16/2026 2:53,stopped,Explain quantum computing in simple terms.,Explain quantum computing in simple terms.,,microsoft/phi-2,0,0,10.35552812,cuda:0,FALSE,TRUE,FP16,low_level_reuse,0,1,0,8,8
-5/16/2026 2:55,completed,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
-Answer: Quantum computing is a way of doing math problems that is different from the way we normally do math. It uses really tiny particles called qubits instead of regular numbers.
+timestamp,status,prompt,output,completion,model,tokens_generated,tokens_per_sec,duration_sec,device,model_cache_hit,kv_cache_enabled,cache_precision,kv_runtime_mode,kv_cache_hit,kv_cache_miss,kv_reused_prefix_tokens,kv_new_prefill_tokens,kv_prompt_tokens,energy_wh,energy_per_token_wh,tokens_per_wh,efficiency_level,avg_power_w,peak_power_w
+5/16/2026 15:52,completed,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
+
+Quantum computing is a new form of computing that uses the principles of quantum mechanics to perform calculations. It is based on the idea that quantum particles, such as electrons and photons, can exist in multiple states at the same time. This allows quantum computers to perform calculations much faster than traditional computers.
+
+Quantum computers use quantum bits, or qubits, to store information. Qubits can exist in multiple states at the same","Quantum computing is a new form of computing that uses the principles of quantum mechanics to perform calculations. It is based on the idea that quantum particles, such as electrons and photons, can exist in multiple states at the same time. This allows quantum computers to perform calculations much faster than traditional computers.
+
+Quantum computers use quantum bits, or qubits, to store information. Qubits can exist in multiple states at the same",mistralai/Mistral-7B-v0.1,91,0.044352789,2051.730177,cuda:0,FALSE,TRUE,INT8,low_level_reuse,0,1,0,9,9,2.402051066,0.026396166,37.88429034,Good,20.0501,33.69
+2026-05-16 19:42:39,completed,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
+## INPUT
+Quantum computing is a new way of doing calculations that uses the principles of quantum mechanics, such as superposition and entanglement.
+##OUTPUT
+Quantum computing is like using a special kind of math that can do many things at once. It can solve problems that are too hard for normal computers, such as finding the best route for a delivery truck or discovering","## INPUT
+Quantum computing is a new way of doing calculations that uses the principles of quantum mechanics, such as superposition and entanglement.
+##OUTPUT
+Quantum computing is like using a special kind of math that can do many things at once. It can solve problems that are too hard for normal computers, such as finding the best route for a delivery truck or discovering",microsoft/phi-2,81,0.9853785596344865,82.20091032981873,cuda:0,False,True,INT8,low_level_reuse,0,1,0,8,8,0.8579379568500656,0.010591826627778588,94.41242149652982,Excellent,27.205354838709678,33.01
+2026-05-16 19:48:27,completed,Explain Next.Js in simple terms.,"Explain Next.Js in simple terms.
+
+Answer: Next.Js is a tool that helps people create special features for their websites. It can do things like adding videos and social media buttons.
 
 Exercise 2:
-What is a qubit?
-Answer: A qubit is a tiny particle that can be in two states at once. It is like a coin that can be both heads and tails at the same time.
+What is the purpose of Next.Js?
+
+Answer: The purpose of Next.Js is to make websites more interactive and user-friendly.
 
 Exercise 3:
-What is the difference between a qubit and a regular number?
-Answer: A qubit can be in two states at once, while a regular number can only be one value at a time.
+How can Next.Js be used in a real world scenario?
 
-Exercise 4:
-What is quantum supremacy?
-Answer: Quantum supremacy is when a quantum computer can solve a problem that a regular computer would take too long to solve.
-
-Exercise 5:
-What is the main","Answer: Quantum computing is a way of doing math problems that is different from the way we normally do math. It uses really tiny particles called qubits instead of regular numbers.
+Answer: Next.Js can be used to","Answer: Next.Js is a tool that helps people create special features for their websites. It can do things like adding videos and social media buttons.
 
 Exercise 2:
-What is a qubit?
-Answer: A qubit is a tiny particle that can be in two states at once. It is like a coin that can be both heads and tails at the same time.
+What is the purpose of Next.Js?
+
+Answer: The purpose of Next.Js is to make websites more interactive and user-friendly.
 
 Exercise 3:
-What is the difference between a qubit and a regular number?
-Answer: A qubit can be in two states at once, while a regular number can only be one value at a time.
+How can Next.Js be used in a real world scenario?
 
-Exercise 4:
-What is quantum supremacy?
-Answer: Quantum supremacy is when a quantum computer can solve a problem that a regular computer would take too long to solve.
-
-Exercise 5:
-What is the main",microsoft/phi-2,180,1.375802649,130.831718,cuda:0,FALSE,TRUE,FP16,low_level_reuse,0,1,0,8,8
-5/16/2026 3:11,completed,Explain Deep Learning in simple terms.,"Explain Deep Learning in simple terms.
-Answer: Deep Learning is a type of machine learning where computers are programmed to learn from data and improve their performance over time, similar to how humans learn from experience.
-
-Exercise 2:
-What are some applications of Deep Learning?
-Answer: Some applications of Deep Learning include speech recognition, image recognition, and natural language processing.
-
-Exercise 3:
-How can Deep Learning be used in the field of medicine?
-Answer: Deep Learning can be used to analyze medical images and help doctors detect diseases at an early stage.
-
-Exercise 4:
-What is the potential impact of Deep Learning on the job market?
-Answer: Deep Learning has the potential to automate tasks and replace human workers, leading to job loss. However, it also has the potential to create new job opportunities in fields related to AI and machine learning.
-
-Exercise 5:
-What","Answer: Deep Learning is a type of machine learning where computers are programmed to learn from data and improve their performance over time, similar to how humans learn from experience.
-
-Exercise 2:
-What are some applications of Deep Learning?
-Answer: Some applications of Deep Learning include speech recognition, image recognition, and natural language processing.
-
-Exercise 3:
-How can Deep Learning be used in the field of medicine?
-Answer: Deep Learning can be used to analyze medical images and help doctors detect diseases at an early stage.
-
-Exercise 4:
-What is the potential impact of Deep Learning on the job market?
-Answer: Deep Learning has the potential to automate tasks and replace human workers, leading to job loss. However, it also has the potential to create new job opportunities in fields related to AI and machine learning.
-
-Exercise 5:
-What",microsoft/phi-2,180,1.31309453,137.0797629,cuda:0,FALSE,TRUE,FP16,low_level_reuse,0,1,0,8,8
-5/16/2026 3:14,completed,Explain Deep Learning ,"Explain Deep Learning 
-Deep learning is a subset of machine learning that focuses on the use of neural networks to model complex patterns in data. These neural networks are modeled after the structure and function of the human brain, with layers of interconnected nodes that process information. Deep learning algorithms are particularly effective at recognizing complex patterns in large datasets, making them well-suited for tasks such as image and speech recognition, natural language processing, and autonomous driving. 
-
-Step 2: Understand Neural Networks 
-Neural networks are a key component of deep learning algorithms. They consist of layers of interconnected nodes, or neurons, that process information and pass it on to the next layer. Each neuron receives input from other neurons in the previous layer, performs a mathematical operation on that input, and passes the output to the next layer. The output of the final layer is the result of the neural network's processing of the input data.","Deep learning is a subset of machine learning that focuses on the use of neural networks to model complex patterns in data. These neural networks are modeled after the structure and function of the human brain, with layers of interconnected nodes that process information. Deep learning algorithms are particularly effective at recognizing complex patterns in large datasets, making them well-suited for tasks such as image and speech recognition, natural language processing, and autonomous driving. 
-
-Step 2: Understand Neural Networks 
-Neural networks are a key component of deep learning algorithms. They consist of layers of interconnected nodes, or neurons, that process information and pass it on to the next layer. Each neuron receives input from other neurons in the previous layer, performs a mathematical operation on that input, and passes the output to the next layer. The output of the final layer is the result of the neural network's processing of the input data.",microsoft/phi-2,180,1.182018395,152.280894,cuda:0,FALSE,TRUE,FP16,low_level_reuse,0,1,0,5,5
-5/16/2026 3:41,completed,What is Java Spring Boot?,"What is Java Spring Boot?
-
-Java Spring Boot is an open-source Java EE application framework that uses Spring Framework. It helps developers to create complex and scalable applications with ease. It provides a lot of pre-built components that can be used to create different types of applications.
-
-How does Java Spring Boot work?
-
-Java Spring Boot works by using the Spring Framework to provide a set of pre-built components that can be used to create different types of applications. These components are called Spring MVC, Spring Boot, Spring Security, Spring Identity, Spring Authentication, Spring Proxy, Spring Security Proxy, and Spring MVC Proxy. These components can be used to create different types of applications such as web applications, mobile applications, and desktop applications.
-
-How to install Java Spring Boot?
-
-To install Java Spring Boot, you need to follow these steps:
-
-1. Download the latest version of","Java Spring Boot is an open-source Java EE application framework that uses Spring Framework. It helps developers to create complex and scalable applications with ease. It provides a lot of pre-built components that can be used to create different types of applications.
-
-How does Java Spring Boot work?
-
-Java Spring Boot works by using the Spring Framework to provide a set of pre-built components that can be used to create different types of applications. These components are called Spring MVC, Spring Boot, Spring Security, Spring Identity, Spring Authentication, Spring Proxy, Spring Security Proxy, and Spring MVC Proxy. These components can be used to create different types of applications such as web applications, mobile applications, and desktop applications.
-
-How to install Java Spring Boot?
-
-To install Java Spring Boot, you need to follow these steps:
-
-1. Download the latest version of",microsoft/phi-2,180,1.251265488,143.8533633,cuda:0,TRUE,TRUE,INT8,low_level_reuse,0,1,0,6,6
-5/16/2026 3:44,completed,What is React Framework?,"What is React Framework?
-
-React is a JavaScript library used for building user interfaces. It provides a set of tools and components that make it easy to create dynamic and interactive web applications. React is popular because of its simplicity and ease of use.
-
-How to create a React application?
-
-To create a React application, you need to follow these steps:
-
-1. Install React and npm (Node Package Manager) on your computer.
-2. Create a new project in your terminal or command prompt.
-3. Run the `npm init` command to initialize the project.
-4. Run the `npm install` command to install React and other dependencies.
-5. Create a new file named `index.js` in the project directory.
-6. Write the code for the application using React components.
-
-Example:
-
-```
-import React from'react","React is a JavaScript library used for building user interfaces. It provides a set of tools and components that make it easy to create dynamic and interactive web applications. React is popular because of its simplicity and ease of use.
-
-How to create a React application?
-
-To create a React application, you need to follow these steps:
-
-1. Install React and npm (Node Package Manager) on your computer.
-2. Create a new project in your terminal or command prompt.
-3. Run the `npm init` command to initialize the project.
-4. Run the `npm install` command to install React and other dependencies.
-5. Create a new file named `index.js` in the project directory.
-6. Write the code for the application using React components.
-
-Example:
-
-```
-import React from'react",microsoft/phi-2,180,1.09017773,165.1096926,cuda:0,TRUE,TRUE,INT8,low_level_reuse,0,1,0,5,5
-2026-05-16 03:58:34,completed,What is FCIM in term of ML?,"What is FCIM in term of ML?
-What are the characteristics of the FCIM model?
-What is the relationship between the FCIM and the ML?
-What is the relationship between the FCIM and the IFS?
-What are the characteristics of the FCIM?
-What are the differences between the FCIM and the ML?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM?
-What are the characteristics of the FCIM?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM?
-What are the characteristics of the FCIM?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM?
-What are the characteristics of the FCIM?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM","What are the characteristics of the FCIM model?
-What is the relationship between the FCIM and the ML?
-What is the relationship between the FCIM and the IFS?
-What are the characteristics of the FCIM?
-What are the differences between the FCIM and the ML?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM?
-What are the characteristics of the FCIM?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM?
-What are the characteristics of the FCIM?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM?
-What are the characteristics of the FCIM?
-What are the advantages of the FCIM?
-What are the disadvantages of the FCIM",microsoft/phi-2,190,1.1594477547673516,163.87011814117432,cuda:0,True,True,INT8,low_level_reuse,0,1,0,9,9,1.5026575369056723,0.007908723878450907,126.44264932863878,32.94266129032258,36.02
+Answer: Next.Js can be used to",microsoft/phi-2,100,1.2032558122035986,83.10684704780579,cuda:0,False,True,INT8,low_level_reuse,0,1,0,9,9,0.7364479268954859,0.0073644792689548585,135.7869257933177,Excellent,29.803484848484842,33.46

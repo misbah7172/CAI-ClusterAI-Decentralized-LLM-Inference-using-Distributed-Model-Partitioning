@@ -117,24 +117,20 @@ _KV_LOW_LEVEL_CONTEXT: Dict[str, Any] = {
 }
 
 _MODEL_RUNTIME_LOCK = threading.Lock()
+if "_MODEL_RUNTIME_CACHE" not in globals():
+    _MODEL_RUNTIME_CACHE: Dict[Tuple[str, str, str, bool, str], Dict[str, Any]] = {}
+if "_MODEL_RUNTIME_LOAD_EVENTS" not in globals():
+    _MODEL_RUNTIME_LOAD_EVENTS: Dict[Tuple[str, str, str, bool, str], threading.Event] = {}
 
 
 def _get_model_runtime_cache() -> Dict[Tuple[str, str, str, bool, str], Dict[str, Any]]:
-    """Return the per-session model runtime cache so Streamlit reruns keep it alive."""
-    cache = st.session_state.get("_model_runtime_cache")
-    if cache is None:
-        cache = {}
-        st.session_state["_model_runtime_cache"] = cache
-    return cache
+    """Return the process-global model runtime cache."""
+    return _MODEL_RUNTIME_CACHE
 
 
 def _get_model_runtime_load_events() -> Dict[Tuple[str, str, str, bool, str], threading.Event]:
-    """Return the per-session load-event map used to coordinate model loading."""
-    load_events = st.session_state.get("_model_runtime_load_events")
-    if load_events is None:
-        load_events = {}
-        st.session_state["_model_runtime_load_events"] = load_events
-    return load_events
+    """Return the process-global load-event map used to coordinate model loading."""
+    return _MODEL_RUNTIME_LOAD_EVENTS
 
 
 def load_inference_history_from_csv() -> List[Dict[str, Any]]:
@@ -196,8 +192,6 @@ def init_session():
         "gpu_live_last_sample": None,
         "gpu_live_history": [],
         "inference_history": [],
-        "_model_runtime_cache": {},
-        "_model_runtime_load_events": {},
         "inference_history_loaded_from_csv": False,
     }
     for key, value in defaults.items():
@@ -816,6 +810,11 @@ def get_live_gpu_telemetry(min_interval_sec: float = 1.0) -> Dict[str, Any]:
         import torch
 
         if torch.cuda.is_available():
+            try:
+                device_props = torch.cuda.get_device_properties(0)
+                sample["cuda_total_mb"] = round(float(device_props.total_memory) / (1024 * 1024), 2)
+            except Exception:
+                sample["cuda_total_mb"] = round(sample.get("memory_total_mb", 0.0), 2)
             sample["torch_allocated_mb"] = round(torch.cuda.memory_allocated(0) / (1024 * 1024), 2)
             sample["torch_reserved_mb"] = round(torch.cuda.memory_reserved(0) / (1024 * 1024), 2)
     except Exception:
@@ -891,7 +890,11 @@ def render_gpu_live_telemetry_panel(
         delta_txt = f"{sample.get('power_pct', 0):.1f}% of limit" if power_limit else "limit N/A"
         st.metric("Power", f"{sample.get('power_w', 0):.1f} W", delta=delta_txt)
     with m5:
-        st.metric("CUDA Allocated", f"{sample.get('torch_allocated_mb', 0):.0f} MB")
+        st.metric(
+            "CUDA Allocated",
+            f"{sample.get('torch_allocated_mb', 0):.0f} MB",
+            delta=f"max {sample.get('cuda_total_mb', sample.get('memory_total_mb', 0)):.0f} MB",
+        )
     with m6:
         st.metric("Energy (window)", f"{sample.get('energy_window_wh', 0):.4f} Wh")
 
@@ -903,20 +906,59 @@ def render_gpu_live_telemetry_panel(
     if history:
         time_labels = [datetime.fromtimestamp(float(h.get("ts", 0.0))).strftime("%H:%M:%S") for h in history]
         util_series = [float(h.get("util_pct", 0.0) or 0.0) for h in history]
-        mem_series = [float(h.get("memory_used_pct", 0.0) or 0.0) for h in history]
+        vram_used_series = [float(h.get("memory_used_mb", 0.0) or 0.0) for h in history]
+        vram_total_series = [float(h.get("memory_total_mb", 0.0) or 0.0) for h in history]
         temp_series = [float(h.get("temperature_c", 0.0) or 0.0) for h in history]
         power_series = [float(h.get("power_w", 0.0) or 0.0) for h in history]
+        cuda_alloc_series = [float(h.get("torch_allocated_mb", 0.0) or 0.0) for h in history]
+        energy_series = [float(h.get("energy_window_wh", 0.0) or 0.0) for h in history]
 
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1)
+        fig = make_subplots(
+            rows=2,
+            cols=3,
+            shared_xaxes=False,
+            vertical_spacing=0.14,
+            horizontal_spacing=0.08,
+            subplot_titles=(
+                "GPU Util %",
+                "VRAM Used (MB)",
+                "Temperature (C)",
+                "Power (W)",
+                "CUDA Allocated (MB)",
+                "Energy Window (Wh)",
+            ),
+        )
         fig.add_trace(
             go.Scatter(x=time_labels, y=util_series, name="GPU Util %", line=dict(color="#14b8a6", width=2)),
             row=1,
             col=1,
         )
         fig.add_trace(
-            go.Scatter(x=time_labels, y=mem_series, name="VRAM %", line=dict(color="#06b6d4", width=2)),
+            go.Scatter(
+                x=time_labels,
+                y=vram_used_series,
+                name="VRAM Used MB",
+                line=dict(color="#06b6d4", width=2),
+                fill="tozeroy",
+                fillcolor="rgba(6, 182, 212, 0.12)",
+            ),
             row=1,
-            col=1,
+            col=2,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=time_labels,
+                y=vram_total_series,
+                name="VRAM Total MB",
+                line=dict(color="#38bdf8", width=1, dash="dot"),
+            ),
+            row=1,
+            col=2,
+        )
+        fig.add_trace(
+            go.Scatter(x=time_labels, y=temp_series, name="Temp C", line=dict(color="#ef4444", width=2)),
+            row=1,
+            col=3,
         )
         fig.add_trace(
             go.Scatter(x=time_labels, y=power_series, name="Power W", line=dict(color="#f59e0b", width=2)),
@@ -924,14 +966,23 @@ def render_gpu_live_telemetry_panel(
             col=1,
         )
         fig.add_trace(
-            go.Scatter(x=time_labels, y=temp_series, name="Temp C", line=dict(color="#ef4444", width=2)),
+            go.Scatter(x=time_labels, y=cuda_alloc_series, name="CUDA Alloc MB", line=dict(color="#a855f7", width=2)),
             row=2,
-            col=1,
+            col=2,
         )
-        fig.update_layout(height=460, template="plotly_dark", title="Live GPU Trends")
-        fig.update_yaxes(title_text="Util / VRAM %", row=1, col=1)
-        fig.update_yaxes(title_text="Power / Temp", row=2, col=1)
-        st.plotly_chart(fig, width="stretch")
+        fig.add_trace(
+            go.Scatter(x=time_labels, y=energy_series, name="Energy Wh", line=dict(color="#22c55e", width=2)),
+            row=2,
+            col=3,
+        )
+        fig.update_layout(height=720, template="plotly_dark", title="Live GPU Trends", showlegend=False)
+        fig.update_yaxes(title_text="%", row=1, col=1)
+        fig.update_yaxes(title_text="MB", row=1, col=2)
+        fig.update_yaxes(title_text="C", row=1, col=3)
+        fig.update_yaxes(title_text="W", row=2, col=1)
+        fig.update_yaxes(title_text="MB", row=2, col=2)
+        fig.update_yaxes(title_text="Wh", row=2, col=3)
+        st.plotly_chart(fig, width="stretch", config={"responsive": True})
 
     if allow_auto_refresh and auto_refresh:
         time.sleep(float(refresh_interval))
