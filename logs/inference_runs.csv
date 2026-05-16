@@ -1,20 +1,20 @@
-timestamp,status,prompt,output,completion,model,tokens_generated,tokens_per_sec,duration_sec,device,model_cache_hit,kv_cache_enabled,cache_precision,kv_runtime_mode,kv_cache_hit,kv_cache_miss,kv_reused_prefix_tokens,kv_new_prefill_tokens,kv_prompt_tokens,energy_wh,energy_per_token_wh,tokens_per_wh,efficiency_level,avg_power_w,peak_power_w
+timestamp,status,prompt,output,completion,model,tokens_generated,tokens_per_sec,duration_sec,device,model_cache_hit,kv_cache_enabled,cache_precision,kv_runtime_mode,kv_cache_hit,kv_cache_miss,kv_reused_prefix_tokens,kv_new_prefill_tokens,kv_prompt_tokens,energy_wh,energy_per_token_wh,tokens_per_wh,efficiency_level,avg_power_w,peak_power_w,
 5/16/2026 15:52,completed,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
 
 Quantum computing is a new form of computing that uses the principles of quantum mechanics to perform calculations. It is based on the idea that quantum particles, such as electrons and photons, can exist in multiple states at the same time. This allows quantum computers to perform calculations much faster than traditional computers.
 
 Quantum computers use quantum bits, or qubits, to store information. Qubits can exist in multiple states at the same","Quantum computing is a new form of computing that uses the principles of quantum mechanics to perform calculations. It is based on the idea that quantum particles, such as electrons and photons, can exist in multiple states at the same time. This allows quantum computers to perform calculations much faster than traditional computers.
 
-Quantum computers use quantum bits, or qubits, to store information. Qubits can exist in multiple states at the same",mistralai/Mistral-7B-v0.1,91,0.044352789,2051.730177,cuda:0,FALSE,TRUE,INT8,low_level_reuse,0,1,0,9,9,2.402051066,0.026396166,37.88429034,Good,20.0501,33.69
-2026-05-16 19:42:39,completed,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
+Quantum computers use quantum bits, or qubits, to store information. Qubits can exist in multiple states at the same",mistralai/Mistral-7B-v0.1,91,0.044352789,2051.730177,cuda:0,FALSE,TRUE,INT8,low_level_reuse,0,1,0,9,9,2.402051066,0.026396166,37.88429034,Good,20.0501,33.69,
+5/16/2026 19:42,completed,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
 ## INPUT
 Quantum computing is a new way of doing calculations that uses the principles of quantum mechanics, such as superposition and entanglement.
 ##OUTPUT
 Quantum computing is like using a special kind of math that can do many things at once. It can solve problems that are too hard for normal computers, such as finding the best route for a delivery truck or discovering","## INPUT
 Quantum computing is a new way of doing calculations that uses the principles of quantum mechanics, such as superposition and entanglement.
 ##OUTPUT
-Quantum computing is like using a special kind of math that can do many things at once. It can solve problems that are too hard for normal computers, such as finding the best route for a delivery truck or discovering",microsoft/phi-2,81,0.9853785596344865,82.20091032981873,cuda:0,False,True,INT8,low_level_reuse,0,1,0,8,8,0.8579379568500656,0.010591826627778588,94.41242149652982,Excellent,27.205354838709678,33.01
-2026-05-16 19:48:27,completed,Explain Next.Js in simple terms.,"Explain Next.Js in simple terms.
+Quantum computing is like using a special kind of math that can do many things at once. It can solve problems that are too hard for normal computers, such as finding the best route for a delivery truck or discovering",microsoft/phi-2,81,0.98537856,82.20091033,cuda:0,FALSE,TRUE,INT8,low_level_reuse,0,1,0,8,8,0.857937957,0.010591827,94.4124215,Excellent,27.20535484,33.01,
+5/16/2026 19:48,completed,Explain Next.Js in simple terms.,"Explain Next.Js in simple terms.
 
 Answer: Next.Js is a tool that helps people create special features for their websites. It can do things like adding videos and social media buttons.
 
@@ -36,4 +36,62 @@ Answer: The purpose of Next.Js is to make websites more interactive and user-fri
 Exercise 3:
 How can Next.Js be used in a real world scenario?
 
-Answer: Next.Js can be used to",microsoft/phi-2,100,1.2032558122035986,83.10684704780579,cuda:0,False,True,INT8,low_level_reuse,0,1,0,9,9,0.7364479268954859,0.0073644792689548585,135.7869257933177,Excellent,29.803484848484842,33.46
+Answer: Next.Js can be used to",microsoft/phi-2,100,1.203255812,83.10684705,cuda:0,FALSE,TRUE,INT8,low_level_reuse,0,1,0,9,9,0.736447927,0.007364479,135.7869258,Excellent,29.80348485,33.46,
+5/16/2026 20:15,completed,baseline,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms. Quantum computing is a type of computing that uses the principles of quantum mechanics to perform calculations. Unlike classical computers, which use bits that can be either 0 or 1, quantum computers use quantum bits, or qubits, that can be both 0 and 1 at the same time. This allows quantum computers to perform multiple calculations simultaneously, making them much faster than classical computers. Quantum computing is still in its early stages, but it has the potential to revolutionize fields such as cryptography, drug discovery, and optimization problems.
+","Quantum computing is a type of computing that uses the principles of quantum mechanics to perform calculations. Unlike classical computers, which use bits that can be either 0 or 1, quantum computers use quantum bits, or qubits, that can be both 0 and 1 at the same time. This allows quantum computers to perform multiple calculations simultaneously, making them much faster than classical computers. Quantum computing is still in its early stages, but it has the potential to revolutionize fields such as cryptography, drug discovery, and optimization problems.
+",microsoft/phi-2,104,1.210352611,85.92437339,cuda:0,FALSE,FALSE,INT8,baseline_generate,0,0,0,8,8,0.807739574,0.007766727,128.75437,Excellent,30.57948529,35.19
+5/16/2026 20:20,completed,kai,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
+Answer: Quantum computing is like having a super-powered computer that can solve complex problems much faster than traditional computers. It uses the principles of quantum physics, like superposition and entanglement, to perform calculations. It has the potential to revolutionize fields like cryptography, optimization, and drug discovery.
+
+Exercise 4:
+What are some potential risks of quantum computing?
+Answer: Quantum computing poses risks in terms of security and privacy. Traditional encryption methods may become vulnerable to attacks, and sensitive information could be compromised. It also raises ethical concerns about the potential misuse of quantum computing for malicious purposes.
+
+Exercise 5:
+How can quantum computing benefit the field of drug discovery?
+Answer: Quantum computing can significantly speed up the process of drug discovery by simulating the behavior of molecules and predicting their interactions with potential drugs. This can help researchers identify promising compounds more efficiently, leading to the development of new and effective treatments for diseases.
+
+
+
+Exercise 1: 
+
+Imagine you are a chemist working in a laboratory. You have a sample of a compound and you need to determine its molecular structure using a technique called Nuclear Magnetic Resonance (NMR) spectroscopy. 
+
+To perform the NMR experiment, you first","Answer: Quantum computing is like having a super-powered computer that can solve complex problems much faster than traditional computers. It uses the principles of quantum physics, like superposition and entanglement, to perform calculations. It has the potential to revolutionize fields like cryptography, optimization, and drug discovery.
+
+Exercise 4:
+What are some potential risks of quantum computing?
+Answer: Quantum computing poses risks in terms of security and privacy. Traditional encryption methods may become vulnerable to attacks, and sensitive information could be compromised. It also raises ethical concerns about the potential misuse of quantum computing for malicious purposes.
+
+Exercise 5:
+How can quantum computing benefit the field of drug discovery?
+Answer: Quantum computing can significantly speed up the process of drug discovery by simulating the behavior of molecules and predicting their interactions with potential drugs. This can help researchers identify promising compounds more efficiently, leading to the development of new and effective treatments for diseases.
+
+
+
+Exercise 1: 
+
+Imagine you are a chemist working in a laboratory. You have a sample of a compound and you need to determine its molecular structure using a technique called Nuclear Magnetic Resonance (NMR) spectroscopy. 
+
+To perform the NMR experiment, you first",microsoft/phi-2,256,1.01418473,252.4184976,cuda:0,FALSE,TRUE,INT8,low_level_reuse,0,1,0,8,8,2.39235318,0.00934513,107.0076116,Excellent,33.07308357,36.07
+2026-05-16 20:57:48,completed,baseline,Explain Express.Js in simple terms.,"Explain Express.Js in simple terms.
+
+Express.js is a web application framework for Node.js. It is used to build web applications and APIs. It is a minimal and flexible Node.js web application framework, providing a robust set of features for web and mobile applications.
+
+Express.js is built on top of Node.js and provides a set of features that make it easy to build web applications. It includes a powerful HTTP server, a routing system,","Express.js is a web application framework for Node.js. It is used to build web applications and APIs. It is a minimal and flexible Node.js web application framework, providing a robust set of features for web and mobile applications.
+
+Express.js is built on top of Node.js and provides a set of features that make it easy to build web applications. It includes a powerful HTTP server, a routing system,",mistralai/Mistral-7B-v0.1,91,0.04778880613413442,1904.2106211185455,cuda:0,False,False,INT8,baseline_generate,0,0,0,10,10,2.754466035965417,0.030268857538081506,33.03725615484137,Good,20.58413333333337,34.36
+2026-05-16 23:18:17,completed,kai,Explain Express.Js in simple terms.,"Explain Express.Js in simple terms.
+
+Express.js is a web application framework for Node.js, released as free and open-source software under the MIT License. It is designed for building web applications and APIs. It is used to create server-side web applications, which handle HTTP requests and responses.
+
+It provides a set of features and tools that make it easier to build and maintain web applications. It includes features such as routing, middleware, templating","Express.js is a web application framework for Node.js, released as free and open-source software under the MIT License. It is designed for building web applications and APIs. It is used to create server-side web applications, which handle HTTP requests and responses.
+
+It provides a set of features and tools that make it easier to build and maintain web applications. It includes features such as routing, middleware, templating",mistralai/Mistral-7B-v0.1,91,0.04510727588060426,2017.4118945598602,cuda:0,False,True,INT8,offload_safe_generate,0,1,0,10,10,2.818410967188741,0.030971549089986165,32.28769723769883,Good,20.636216666666662,33.65
+2026-05-17 00:42:20,completed,baseline,Explain Express.Js in simple terms.,"Explain Express.Js in simple terms.
+
+Express is a minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications. It’s a web framework built on top of Node.js and the Express router. It’s also a web server that allows you to build web applications quickly and easily.
+
+Express.js is a web application framework that allows you to build web applications quickly and easily. It’s a web framework built","Express is a minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications. It’s a web framework built on top of Node.js and the Express router. It’s also a web server that allows you to build web applications quickly and easily.
+
+Express.js is a web application framework that allows you to build web applications quickly and easily. It’s a web framework built",mistralai/Mistral-7B-v0.1,91,0.02096528904778041,4340.506769418716,cuda:0,False,False,INT8,baseline_generate,0,0,0,10,10,2.4599438044197024,0.02703234949911761,36.99271497035957,Good,18.294149999999988,31.5

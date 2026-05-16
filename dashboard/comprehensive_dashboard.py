@@ -646,6 +646,56 @@ def _get_cached_model_runtime(
         raise
 
 
+def _load_model_runtime_uncached(
+    model_name: str,
+    torch_dtype: Any,
+    device: str,
+    offload_enabled: bool,
+    offload_dir: str,
+) -> Tuple[Any, Any, List[str]]:
+    """Load a HuggingFace model/tokenizer without using the runtime cache."""
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    runtime_notes: List[str] = ["Baseline mode: runtime cache disabled."]
+    load_kwargs: Dict[str, Any] = {
+        "torch_dtype": torch_dtype,
+        "low_cpu_mem_usage": True,
+    }
+    if offload_enabled:
+        load_kwargs["device_map"] = "auto"
+        load_kwargs["offload_folder"] = offload_dir
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    try:
+        model = AutoModelForCausalLM.from_pretrained(model_name, **load_kwargs)
+    except Exception as load_err:
+        load_err_text = str(load_err)
+        should_retry_no_offload = (
+            offload_enabled
+            and (
+                "dispatch_model" in load_err_text
+                or "accelerate.big_modeling" in load_err_text
+                or "partially initialized module 'accelerate.big_modeling'" in load_err_text
+            )
+        )
+        if not should_retry_no_offload:
+            raise
+
+        runtime_notes.append(
+            "Model load retried without offloading due to accelerate circular-import issue."
+        )
+        retry_kwargs: Dict[str, Any] = {
+            "torch_dtype": torch_dtype,
+            "low_cpu_mem_usage": True,
+        }
+        model = AutoModelForCausalLM.from_pretrained(model_name, **retry_kwargs)
+
+    if not offload_enabled:
+        model = model.to(device)
+    model.eval()
+    return model, tokenizer, runtime_notes
+
+
 def _run_model_warmup_worker(params: Dict[str, Any], result_queue: "queue.Queue[Dict[str, Any]]"):
     """Preload a model runtime in the background so the first prompt is warm."""
     try:
@@ -874,7 +924,7 @@ def render_gpu_live_telemetry_panel(
             st.caption(str(sample["error"]))
         return
 
-    m1, m2, m3, m4, m5, m6 = st.columns(6)
+    m1, m2, m3, m4, m5, m6, m7 = st.columns(7)
     with m1:
         st.metric("GPU Util", f"{sample.get('util_pct', 0):.1f}%")
     with m2:
@@ -893,9 +943,14 @@ def render_gpu_live_telemetry_panel(
         st.metric(
             "CUDA Allocated",
             f"{sample.get('torch_allocated_mb', 0):.0f} MB",
-            delta=f"max {sample.get('cuda_total_mb', sample.get('memory_total_mb', 0)):.0f} MB",
         )
     with m6:
+        st.metric(
+            "Max CUDA Allocation",
+            f"{sample.get('cuda_total_mb', sample.get('memory_total_mb', 0)):.0f} MB",
+            delta="device total VRAM",
+        )
+    with m7:
         st.metric("Energy (window)", f"{sample.get('energy_window_wh', 0):.4f} Wh")
 
     st.caption(
@@ -983,6 +1038,16 @@ def render_gpu_live_telemetry_panel(
         fig.update_yaxes(title_text="MB", row=2, col=2)
         fig.update_yaxes(title_text="Wh", row=2, col=3)
         st.plotly_chart(fig, width="stretch", config={"responsive": True})
+
+        telemetry_df = pd.DataFrame(history)
+        telemetry_csv = telemetry_df.to_csv(index=False)
+        st.download_button(
+            " Export Telemetry History CSV",
+            data=telemetry_csv,
+            file_name=f"gpu_telemetry_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv",
+            width="stretch",
+        )
 
     if allow_auto_refresh and auto_refresh:
         time.sleep(float(refresh_interval))
@@ -1101,6 +1166,11 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
         use_kv_cache = params["use_kv_cache"]
         enforce_gpu = bool(params.get("enforce_gpu", False))
         cache_precision = str(params.get("cache_precision", "INT8"))
+        run_mode = str(params.get("run_mode", "kai"))
+
+        baseline_mode = run_mode == "baseline"
+        if baseline_mode:
+            use_kv_cache = False
 
         has_cuda = bool(getattr(torch.cuda, "is_available", lambda: False)())
         if has_cuda:
@@ -1170,15 +1240,28 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
             except Exception:
                 pass
 
-        model, tokenizer, load_notes, cache_hit = _get_cached_model_runtime(
-            model_name=model_name,
-            torch_dtype=chosen_dtype,
-            device=device_to_use,
-            offload_enabled=offload_enabled,
-            offload_dir=offload_dir,
-        )
+        if baseline_mode:
+            model, tokenizer, load_notes = _load_model_runtime_uncached(
+                model_name=model_name,
+                torch_dtype=chosen_dtype,
+                device=device_to_use,
+                offload_enabled=offload_enabled,
+                offload_dir=offload_dir,
+            )
+            cache_hit = False
+        else:
+            model, tokenizer, load_notes, cache_hit = _get_cached_model_runtime(
+                model_name=model_name,
+                torch_dtype=chosen_dtype,
+                device=device_to_use,
+                offload_enabled=offload_enabled,
+                offload_dir=offload_dir,
+            )
         runtime_notes.extend(load_notes)
-        runtime_notes.append("Model runtime cache hit." if cache_hit else "Model runtime cache miss.")
+        if baseline_mode:
+            runtime_notes.append("Baseline mode active: KAI KV reuse disabled.")
+        else:
+            runtime_notes.append("Model runtime cache hit." if cache_hit else "Model runtime cache miss.")
 
         inputs = tokenizer(prompt, return_tensors="pt")
         input_ids = inputs["input_ids"].to(device_to_use)
@@ -1247,9 +1330,12 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
         start_time = time.time()
         used_low_level_kv = False
         prompt_past_for_cache = None
+        allow_low_level_kv = bool(use_kv_cache and not baseline_mode and not offload_enabled)
+        if use_kv_cache and not allow_low_level_kv and not baseline_mode:
+            runtime_notes.append("KAI KV prefix reuse disabled for offloaded model; using standard cache-enabled generation.")
 
         with torch.no_grad():
-            if use_kv_cache:
+            if allow_low_level_kv:
                 try:
                     # Real low-level prefill reuse: reuse prefix past_key_values from previous run.
                     prev_prompt_ids, prev_prompt_past = _get_kv_runtime_entry(model_name)
@@ -1336,12 +1422,13 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
                     "model_cache_hit": cache_hit,
                     "kv_cache_enabled": use_kv_cache,
                     "cache_precision": cache_precision,
+                    "run_mode": run_mode,
                     "kv_cache_hit": kv_low_level.get("kv_cache_hit", 0),
                     "kv_cache_miss": kv_low_level.get("kv_cache_miss", 0),
                     "kv_reused_prefix_tokens": kv_low_level.get("kv_reused_prefix_tokens", 0),
                     "kv_new_prefill_tokens": kv_low_level.get("kv_new_prefill_tokens", 0),
                     "kv_prompt_tokens": kv_low_level.get("kv_prompt_tokens", 0),
-                    "kv_runtime_mode": "low_level_reuse" if used_low_level_kv else "standard_generate",
+                    "kv_runtime_mode": "low_level_reuse" if used_low_level_kv else ("baseline_generate" if baseline_mode else ("offload_safe_generate" if offload_enabled and use_kv_cache else "standard_generate")),
                     "runtime_notes": runtime_notes,
                 },
             }
@@ -1629,6 +1716,7 @@ def page_live_inference():
                     run_entry = {
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "status": "completed",
+                        "run_mode": run_metrics.get("run_mode", "kai"),
                         "prompt": prompt_text,
                         "output": full_text,
                         "completion": completion_text,
@@ -1700,6 +1788,7 @@ def page_live_inference():
                     run_entry = {
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "status": "stopped",
+                        "run_mode": run_metrics.get("run_mode", "kai"),
                         "prompt": prompt_text,
                         "output": full_text,
                         "completion": completion_text,
@@ -1910,6 +1999,14 @@ def page_live_inference():
         with col_adv3:
             dtype = st.selectbox("Model Dtype", ["float16", "float32"])
             offload_dir = st.text_input("Offload Dir", "/tmp/kai_swap")
+
+        run_mode = st.selectbox(
+            "Run Mode",
+            ["kai", "baseline"],
+            index=0,
+            help="kai uses KAI runtime cache and KV prefix reuse; baseline uses the same GPU with those optimizations disabled.",
+            key="inference_run_mode",
+        )
     
     st.divider()
     
@@ -1981,6 +2078,7 @@ def page_live_inference():
             "use_kv_cache": use_kv_cache,
             "cache_precision": cache_precision,
             "enforce_gpu": enforce_gpu,
+            "run_mode": run_mode,
         }
 
         if enforce_gpu and not cuda_available:
@@ -2067,6 +2165,11 @@ def page_live_inference():
             f"Prompt stored in CSV: {'yes' if st.session_state.get('inference_history') else 'no'}"
         )
 
+        if metrics.get("kv_runtime_mode") == "offload_safe_generate":
+            st.warning(
+                "KAI is running in offload-safe mode: model caching is active, but low-level KV prefix reuse is disabled for offloaded weights."
+            )
+
         # Energy metrics: prefer model_metrics but fall back to last saved run
         history_list = st.session_state.get("inference_history", [])
         last_run = history_list[-1] if history_list else {}
@@ -2108,14 +2211,14 @@ def page_live_inference():
             options=list(range(len(history))),
             index=len(history) - 1,
             format_func=lambda i: (
-                f"{i+1}. {history[i].get('timestamp', '')} | {history[i].get('status', '')} | "
+                f"{i+1}. {history[i].get('timestamp', '')} | {history[i].get('run_mode', 'kai')} | {history[i].get('status', '')} | "
                 f"{history[i].get('tokens_generated', 0)} tok"
             ),
             key="run_history_select",
         )
         selected = history[selected_idx]
         st.caption(
-            f"Model: {selected.get('model','N/A')} | Device: {selected.get('device','N/A')} | "
+            f"Mode: {selected.get('run_mode', 'kai').upper()} | Model: {selected.get('model','N/A')} | Device: {selected.get('device','N/A')} | "
             f"KV: {'ON' if selected.get('kv_cache_enabled') else 'OFF'} ({selected.get('cache_precision','N/A')})"
         )
         st.caption(f"KV runtime mode: {selected.get('kv_runtime_mode', 'N/A')}")
@@ -2140,6 +2243,47 @@ def page_live_inference():
             disabled=True,
             key=f"history_output_box_{selected_idx}",
         )
+
+        kai_runs = [r for r in history if str(r.get("run_mode", "kai")).lower() == "kai"]
+        baseline_runs = [r for r in history if str(r.get("run_mode", "kai")).lower() == "baseline"]
+        if kai_runs and baseline_runs:
+            latest_kai = kai_runs[-1]
+            latest_baseline = baseline_runs[-1]
+
+            st.divider()
+            st.subheader(" KAI vs Baseline Compare")
+            compare_col1, compare_col2 = st.columns(2)
+            with compare_col1:
+                st.markdown("**Latest KAI Run**")
+                st.metric("Duration", f"{float(latest_kai.get('duration_sec', 0) or 0):.2f}s")
+                st.metric("Tokens/sec", f"{float(latest_kai.get('tokens_per_sec', 0) or 0):.2f}")
+                st.metric("Energy (Wh)", f"{float(latest_kai.get('energy_wh', 0) or 0):.4f}")
+                st.metric("Tokens/Wh", f"{float(latest_kai.get('tokens_per_wh', 0) or 0):.2f}" if latest_kai.get('tokens_per_wh') else "N/A")
+            with compare_col2:
+                st.markdown("**Latest Baseline Run**")
+                st.metric("Duration", f"{float(latest_baseline.get('duration_sec', 0) or 0):.2f}s")
+                st.metric("Tokens/sec", f"{float(latest_baseline.get('tokens_per_sec', 0) or 0):.2f}")
+                st.metric("Energy (Wh)", f"{float(latest_baseline.get('energy_wh', 0) or 0):.4f}")
+                st.metric("Tokens/Wh", f"{float(latest_baseline.get('tokens_per_wh', 0) or 0):.2f}" if latest_baseline.get('tokens_per_wh') else "N/A")
+
+            comp_fig = create_comparison_chart(
+                {
+                    "Duration (sec)": latest_baseline.get("duration_sec", 0),
+                    "Tokens/sec": latest_baseline.get("tokens_per_sec", 0),
+                    "Energy (Wh)": latest_baseline.get("energy_wh", 0),
+                    "Tokens/Wh": latest_baseline.get("tokens_per_wh", 0) or 0,
+                    "Avg Power (W)": latest_baseline.get("avg_power_w", 0),
+                },
+                {
+                    "Duration (sec)": latest_kai.get("duration_sec", 0),
+                    "Tokens/sec": latest_kai.get("tokens_per_sec", 0),
+                    "Energy (Wh)": latest_kai.get("energy_wh", 0),
+                    "Tokens/Wh": latest_kai.get("tokens_per_wh", 0) or 0,
+                    "Avg Power (W)": latest_kai.get("avg_power_w", 0),
+                },
+                "Latest Baseline vs KAI",
+            )
+            st.plotly_chart(comp_fig, width="stretch", config={"responsive": True})
     else:
         st.info("No completed runs yet. Generate prompts repeatedly and each run will appear here.")
 

@@ -4,6 +4,66 @@ How to connect two (or more) physical machines to run KAI distributed inference.
 
 ---
 
+## Step 0: One-Shot Bootstrap Scripts
+
+If you want the fastest setup, use the bootstrap scripts added to the repo. Linux uses the Python scripts directly. Windows uses PowerShell wrappers that self-elevate, enable WSL2, install Ubuntu, and then run the same Python bootstrap flow inside WSL.
+
+### Windows Primary Node
+
+Run PowerShell as Administrator:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/windows/setup-primary.ps1 -ServerIp 192.168.1.100
+```
+
+This installs the node prerequisites, starts the K3s primary server, and saves the join token to `~/.kai/k3s-node-token.txt` inside WSL plus `logs/k3s-node-token.txt` on the Windows side.
+
+### Windows Worker Node
+
+Run PowerShell as Administrator:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/windows/setup-worker.ps1 -ServerUrl https://192.168.1.100:6443 -TokenFile .\logs\k3s-node-token.txt
+```
+
+The worker wrapper installs the node prerequisites, joins the cluster, and uses the token saved by the primary node.
+
+### Linux / WSL Primary Node
+
+```bash
+python scripts/bootstrap/setup_primary.py --server-ip 192.168.1.100
+```
+
+This installs the node prerequisites, starts the K3s primary server, and saves the join token to `~/.kai/k3s-node-token.txt`.
+
+### Linux / WSL Worker Node
+
+```bash
+python scripts/bootstrap/setup_worker.py \
+  --server-url https://192.168.1.100:6443 \
+  --token-file ~/.kai/k3s-node-token.txt
+```
+
+These scripts run directly on Linux or inside WSL2.
+
+> Note: the Windows wrapper will automate WSL2 installation, but if Windows itself requires a reboot to finish enabling the platform features, rerun the script after the reboot.
+
+---
+
+## Docker Image in GitHub
+
+The repo now includes a root `Dockerfile` for the KAI dashboard image and a GitHub Actions workflow that builds and pushes it to GitHub Container Registry (GHCR).
+
+Image name:
+
+```text
+ghcr.io/<github-owner>/kai-dashboard:latest
+```
+
+The workflow is stored in `.github/workflows/docker-ghcr.yml` and runs on pushes to `main`, version tags, or manually from the GitHub Actions UI.
+
+---
+
 ## Prerequisites on ALL Machines
 
 | Requirement | Details |
@@ -77,6 +137,14 @@ kubectl describe node friends-laptop | grep nvidia.com/gpu
 ```bash
 # On the machine where KAI code lives:
 cd C:\CODE\KAI
+docker build -t ghcr.io/<github-owner>/kai-dashboard:latest .
+
+# Or let GitHub Actions publish it automatically to GHCR.
+```
+
+If you want the cluster component images, keep using the existing KAI builder:
+
+```bash
 python kai_cli.py build --tag kai:latest
 
 # This builds 3 images:
