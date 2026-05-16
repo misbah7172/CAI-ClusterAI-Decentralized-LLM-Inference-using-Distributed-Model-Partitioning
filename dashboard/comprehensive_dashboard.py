@@ -97,6 +97,15 @@ POPULAR_MODELS = [
     "google/gemma-2b",
     "tiiuae/falcon-7b",
     "mistralai/Mistral-7B-v0.1",
+    # Additional models requested for testing
+    "mistralai/mistral-nemo-12b-instruct",
+    "Qwen/Qwen-2.5-14B",
+    "Qwen/Qwen-2.5-32B",
+    # Additional validated large models
+    "mosaicml/mpt-12b",
+    "meta-llama/Llama-2-13b-hf",
+    "facebook/opt-30b",
+    "meta-llama/Llama-2-70b-hf",
 ]
 
 MODEL_SIZES_MB = {
@@ -105,6 +114,13 @@ MODEL_SIZES_MB = {
     "google/gemma-2b": 4000,
     "tiiuae/falcon-7b": 14000,
     "mistralai/Mistral-7B-v0.1": 14000,
+    "mistralai/mistral-nemo-12b-instruct": 48000,
+    "Qwen/Qwen-2.5-14B": 56000,
+    "Qwen/Qwen-2.5-32B": 128000,
+    "mosaicml/mpt-12b": 48000,
+    "meta-llama/Llama-2-13b-hf": 52000,
+    "facebook/opt-30b": 120000,
+    "meta-llama/Llama-2-70b-hf": 280000,
 }
 
 LOGS_DIR = Path(os.environ.get("KAI_LOGS_DIR", "logs"))
@@ -1040,12 +1056,13 @@ def render_gpu_live_telemetry_panel(
         st.plotly_chart(fig, width="stretch", config={"responsive": True})
 
         telemetry_df = pd.DataFrame(history)
-        telemetry_csv = telemetry_df.to_csv(index=False)
+        telemetry_csv = telemetry_df.to_csv(index=False).encode("utf-8")
         st.download_button(
             " Export Telemetry History CSV",
             data=telemetry_csv,
             file_name=f"gpu_telemetry_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
             mime="text/csv",
+            key="download_telemetry_history_csv",
             width="stretch",
         )
 
@@ -1907,6 +1924,22 @@ def page_live_inference():
             )
         else:
             model_name = model_choice
+
+        # Validate model metadata (no weight download)
+        if model_name:
+            if st.button("Validate model (metadata only)", key="validate_model_btn"):
+                try:
+                    from huggingface_hub import HfApi
+                    api = HfApi()
+                    with st.spinner(f"Checking {model_name} on Hugging Face..."):
+                        info = api.model_info(model_name)
+                    st.success(f"Model found: {info.modelId}")
+                    if info.private:
+                        st.info("Model is private — ensure you are authenticated with `huggingface-cli login` or pass a token.")
+                    if info.tags:
+                        st.write("Tags:", ", ".join(info.tags))
+                except Exception as e:
+                    st.error(f"Model validation failed: {e}")
     
     if not model_name:
         st.warning("Select or enter a model name to continue.")
@@ -2526,14 +2559,14 @@ def page_performance_monitor():
             st.rerun()
     
     with col_export:
-        if st.button(" Export Metrics"):
-            json_str = json.dumps(metrics, indent=2, default=str)
-            st.download_button(
-                label="Download JSON",
-                data=json_str,
-                file_name=f"metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json"
-            )
+        json_str = json.dumps(metrics, indent=2, default=str).encode("utf-8")
+        st.download_button(
+            label="Download JSON",
+            data=json_str,
+            file_name=f"metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+            mime="application/json",
+            key="download_metrics_json",
+        )
 
 # ============================================================================
 # Page 4: KV CACHE ANALYTICS
@@ -2668,9 +2701,10 @@ def page_kv_cache_analytics():
         }
         st.download_button(
             " Export KV Telemetry JSON",
-            data=json.dumps(kv_export, indent=2, default=str),
+            data=json.dumps(kv_export, indent=2, default=str).encode("utf-8"),
             file_name=f"kv_telemetry_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
             mime="application/json",
+            key="download_kv_telemetry_json",
             width="stretch",
         )
     

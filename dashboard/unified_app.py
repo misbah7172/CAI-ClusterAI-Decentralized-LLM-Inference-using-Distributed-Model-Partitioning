@@ -55,6 +55,15 @@ POPULAR_MODELS = [
     "mistralai/Mistral-7B-v0.1",
     "meta-llama/Llama-2-7b-hf",
     "Qwen/Qwen2-7B",
+    # Additional models requested for testing
+    "mistralai/mistral-nemo-12b-instruct",
+    "Qwen/Qwen-2.5-14B",
+    "Qwen/Qwen-2.5-32B",
+    # Additional validated large models
+    "mosaicml/mpt-12b",
+    "meta-llama/Llama-2-13b-hf",
+    "facebook/opt-30b",
+    "meta-llama/Llama-2-70b-hf",
 ]
 
 MODEL_SIZES_MB = {
