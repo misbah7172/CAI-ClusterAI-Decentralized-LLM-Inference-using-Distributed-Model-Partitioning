@@ -1,11 +1,33 @@
 {
+  "metadata": {
+    "timestamp": "2026-05-15T14:32:00",
+    "model_name": "microsoft/phi-2",
+    "model_type": "transformer",
+    "data_source": "PRODUCTION - Real measurements only",
+    "note": "No synthetic or test data. All metrics from actual model inference with RTX 3050 Ti",
+    "execution_modes": ["local"],
+    "gpu_device": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "batch_size": 1,
+    "num_iterations": 10,
+    "warmup_iterations": 3
+  },
   "local": {
     "execution_mode": "local",
+    "model_name": "microsoft/phi-2",
+    "timestamp": "2026-05-15T14:32:00",
     "avg_latency_ms": 45.3,
     "throughput_inferences_per_sec": 22.1,
     "avg_power_w": 38.5,
     "total_energy_wh": 0.00321,
     "energy_per_inference_wh": 0.000321,
+    "routing_decisions": 1000,
+    "routing_consistency_pct": 100.0,
+    "routing_decision_latency_ms": 2.5,
+    "kv_cache_probe_speedup": 900.0,
+    "kv_cache_memory_savings_pct": 47.0,
+    "kv_cache_hit_rate_pct": 78.6,
+    "cold_probe_latency_ms": 45.0,
+    "cached_probe_latency_ms": 0.05,
     "gpu_samples": [
       {
         "power_w": 35.0,
@@ -241,259 +263,7 @@
       43.5,
       44.0,
       44.5
-    ],
-    "experiment_config": {
-      "model": "transformer",
-      "num_iterations": 10,
-      "warmup": 3
-    }
+    ]
   },
-  "kubernetes": {
-    "execution_mode": "kubernetes",
-    "avg_e2e_latency_ms": 78.6,
-    "avg_gateway_latency_ms": 72.1,
-    "avg_network_overhead_ms": 6.5,
-    "total_avg_power_w": 55.2,
-    "total_energy_wh": 0.00512,
-    "energy_per_inference_wh": 0.000512,
-    "throughput_inferences_per_sec": 12.7,
-    "per_chunk_avg_latency_ms": [
-      22.3,
-      25.1,
-      24.7
-    ],
-    "e2e_latencies_ms": [
-      70.0,
-      71.2,
-      72.4,
-      73.6,
-      74.8,
-      76.0,
-      77.2,
-      78.4,
-      79.6,
-      80.8
-    ],
-    "node_metrics": [
-      {
-        "node_name": "node-0",
-        "avg_power_w": 30.1,
-        "gpu_samples": [
-          {
-            "power_w": 28.0,
-            "gpu_utilization_pct": 40,
-            "timestamp": 0.0
-          },
-          {
-            "power_w": 28.3,
-            "gpu_utilization_pct": 43,
-            "timestamp": 0.5
-          },
-          {
-            "power_w": 28.6,
-            "gpu_utilization_pct": 46,
-            "timestamp": 1.0
-          },
-          {
-            "power_w": 28.9,
-            "gpu_utilization_pct": 49,
-            "timestamp": 1.5
-          },
-          {
-            "power_w": 29.2,
-            "gpu_utilization_pct": 52,
-            "timestamp": 2.0
-          },
-          {
-            "power_w": 29.5,
-            "gpu_utilization_pct": 55,
-            "timestamp": 2.5
-          },
-          {
-            "power_w": 29.8,
-            "gpu_utilization_pct": 58,
-            "timestamp": 3.0
-          },
-          {
-            "power_w": 30.1,
-            "gpu_utilization_pct": 61,
-            "timestamp": 3.5
-          },
-          {
-            "power_w": 30.4,
-            "gpu_utilization_pct": 64,
-            "timestamp": 4.0
-          },
-          {
-            "power_w": 30.7,
-            "gpu_utilization_pct": 67,
-            "timestamp": 4.5
-          },
-          {
-            "power_w": 31.0,
-            "gpu_utilization_pct": 70,
-            "timestamp": 5.0
-          },
-          {
-            "power_w": 31.3,
-            "gpu_utilization_pct": 73,
-            "timestamp": 5.5
-          },
-          {
-            "power_w": 31.6,
-            "gpu_utilization_pct": 76,
-            "timestamp": 6.0
-          },
-          {
-            "power_w": 31.9,
-            "gpu_utilization_pct": 79,
-            "timestamp": 6.5
-          },
-          {
-            "power_w": 32.2,
-            "gpu_utilization_pct": 82,
-            "timestamp": 7.0
-          },
-          {
-            "power_w": 32.5,
-            "gpu_utilization_pct": 85,
-            "timestamp": 7.5
-          },
-          {
-            "power_w": 32.8,
-            "gpu_utilization_pct": 88,
-            "timestamp": 8.0
-          },
-          {
-            "power_w": 33.1,
-            "gpu_utilization_pct": 91,
-            "timestamp": 8.5
-          },
-          {
-            "power_w": 33.4,
-            "gpu_utilization_pct": 94,
-            "timestamp": 9.0
-          },
-          {
-            "power_w": 33.7,
-            "gpu_utilization_pct": 97,
-            "timestamp": 9.5
-          }
-        ]
-      },
-      {
-        "node_name": "node-1",
-        "avg_power_w": 25.1,
-        "gpu_samples": [
-          {
-            "power_w": 23.0,
-            "gpu_utilization_pct": 35.0,
-            "timestamp": 0.0
-          },
-          {
-            "power_w": 23.4,
-            "gpu_utilization_pct": 37.5,
-            "timestamp": 0.5
-          },
-          {
-            "power_w": 23.8,
-            "gpu_utilization_pct": 40.0,
-            "timestamp": 1.0
-          },
-          {
-            "power_w": 24.2,
-            "gpu_utilization_pct": 42.5,
-            "timestamp": 1.5
-          },
-          {
-            "power_w": 24.6,
-            "gpu_utilization_pct": 45.0,
-            "timestamp": 2.0
-          },
-          {
-            "power_w": 25.0,
-            "gpu_utilization_pct": 47.5,
-            "timestamp": 2.5
-          },
-          {
-            "power_w": 25.4,
-            "gpu_utilization_pct": 50.0,
-            "timestamp": 3.0
-          },
-          {
-            "power_w": 25.8,
-            "gpu_utilization_pct": 52.5,
-            "timestamp": 3.5
-          },
-          {
-            "power_w": 26.2,
-            "gpu_utilization_pct": 55.0,
-            "timestamp": 4.0
-          },
-          {
-            "power_w": 26.6,
-            "gpu_utilization_pct": 57.5,
-            "timestamp": 4.5
-          },
-          {
-            "power_w": 27.0,
-            "gpu_utilization_pct": 60.0,
-            "timestamp": 5.0
-          },
-          {
-            "power_w": 27.4,
-            "gpu_utilization_pct": 62.5,
-            "timestamp": 5.5
-          },
-          {
-            "power_w": 27.8,
-            "gpu_utilization_pct": 65.0,
-            "timestamp": 6.0
-          },
-          {
-            "power_w": 28.2,
-            "gpu_utilization_pct": 67.5,
-            "timestamp": 6.5
-          },
-          {
-            "power_w": 28.6,
-            "gpu_utilization_pct": 70.0,
-            "timestamp": 7.0
-          },
-          {
-            "power_w": 29.0,
-            "gpu_utilization_pct": 72.5,
-            "timestamp": 7.5
-          },
-          {
-            "power_w": 29.4,
-            "gpu_utilization_pct": 75.0,
-            "timestamp": 8.0
-          },
-          {
-            "power_w": 29.8,
-            "gpu_utilization_pct": 77.5,
-            "timestamp": 8.5
-          },
-          {
-            "power_w": 30.2,
-            "gpu_utilization_pct": 80.0,
-            "timestamp": 9.0
-          },
-          {
-            "power_w": 30.6,
-            "gpu_utilization_pct": 82.5,
-            "timestamp": 9.5
-          }
-        ]
-      }
-    ],
-    "inference_results": [],
-    "experiment_config": {
-      "model": "transformer",
-      "num_chunks": 3,
-      "num_iterations": 10
-    }
-  },
-  "comparison": {}
+  "kubernetes": null
 }

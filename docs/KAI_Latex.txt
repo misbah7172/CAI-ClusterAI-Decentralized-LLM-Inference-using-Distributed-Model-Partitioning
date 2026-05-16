@@ -1,0 +1,261 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%Template version as of 6/27/2024
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{float}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+
+\usepackage[hidelinks]{hyperref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    citecolor=blue,
+}
+\begin{document}
+
+\title{Reducing Energy Consumption in Large Language Model Inference using Distributed Model Partitioning}
+
+\author{\IEEEauthorblockN{Abdullah Al Noman}
+\IEEEauthorblockA{\textit{ID:0112230367} \\
+\textit{BSCSE, United International University}\\
+Dhaka, Bangladesh \\
+anoman223367@bscse.uiu.ac.bd}
+\and
+\IEEEauthorblockN{Kazi Neyamul Hasan}
+\IEEEauthorblockA{\textit{ID:0112230359} \\
+\textit{BSCSE, United International University}\\
+Dhaka, Bangladesh \\
+khasan223359@bscse.uiu.ac.bd}
+\and
+\IEEEauthorblockN{Mahathir Mohammad}
+\IEEEauthorblockA{\textit{ID:0112230889} \\
+\textit{BSCSE, United International University}\\
+Dhaka, Bangladesh \\
+mmohammad223889@bscse.uiu.ac.bd}
+\and
+\IEEEauthorblockN{Md. Habibulla Misba}
+\IEEEauthorblockA{\textit{ID:011221373} \\
+\textit{BSCSE, United International University}\\
+Dhaka, Bangladesh \\
+mmisba221373@bscse.uiu.ac.bd}
+\and
+\IEEEauthorblockN{Rakibul Hassan}
+\IEEEauthorblockA{\textit{ID:0112230362} \\
+\textit{BSCSE, United International University}\\
+Dhaka, Bangladesh \\
+rhassan223362@bscse.uiu.ac.bd}
+}
+
+\maketitle
+
+\begin{abstract}The dramatic rise in computing needs of Large Language Models (LLMs) has created an increase in computational and energy demands for artificial intelligence inference. Traditionally, inference processes have been run on top-of-the-line GPUs with massive energy expenditure. Most existing inference frameworks are optimized for maximizing throughput through the use of very fast processors at the cost of energy efficiency. This research presents Kubernetes-based AI Inference (KAI), a novel, low-energy, scalable distributed inference framework designed to deploy large-scale transformer-based LLMs across multiple resource-constrained servers or nodes, and achieve output fidelity equal to that achievable using high-performance systems. Our project represents a unifying architecture capable of supporting either single-server optimizations or multi-server executions. It offers an array of features, including dynamic scheduling that optimizes energy utilization; real-time power monitoring to track energy consumption during inference execution; and adaptive workload distribution that can be customized to take into account the varying characteristics of each server node, including both processing capability and communication latency. Additionally, this system utilizes a hybrid parallelization engine incorporating both pipeline and tensor parallelizations to enable efficient scaling of computations. To optimize its's energy efficiency even further, it utilizes a closed-loop energy feedback control mechanism to continually monitor system operating metrics and adjust various execution parameters (e.g., batch size, precision, maximum allowable power) to optimize energy consumption per processed input token. Moreover, it includes speculative decoding and fault tolerance techniques to provide improved performance and reliability when executing in a distributed environment. Lastly, it introduces a new optimization technique known as KV Cache Optimization, utilizing a mixed-precision store to reduce memory usage while minimizing loss in output fidelity.
+
+\end{abstract}
+
+\section{Introduction}
+\IEEEPARstart{T}{he} development of large amounts of data that can be used with Artificial Intelligence has enabled new applications in Natural Language Generation and Complex Reasoning; however, as well as the creation of a new type of application, it has also created an increased demand on energy and computational power. Due to the large number of parameters in modern transformer architectures (often from tens of billions to hundreds of billions), the models require substantial memory capacity for their parameters and therefore require significant computational power. Traditionally, the computation required for performing these tasks has been performed using Graphics Processing Units (GPUs) in the cloud\cite{11141387}. Cloud GPU-based solutions provide sufficient computational resources for these tasks, but the cost of computing with GPUs is extremely high due to the large amount of electricity required, which raises serious questions about deployment costs, heat dissipation, and the total carbon footprint of deploying generative AI at scale\cite{11141387,su17031321}.
+
+In addition to this growth in the use of decentralized models, an emerging industry trend includes the proliferation of commodity-based edge computing and the increasing affordability of various types of commodity-based hardware. As the use of commodity-based hardware increases at the edge, deployment of inference functions near where the data resides provides several compelling advantages\cite{11304649}. The most important reason is the increased ability to protect user data. Deploying inference functions closer to the location where the data was collected also reduces dependence on networks, as well as the overall cost associated with supporting the necessary computing resources\cite{fi17090417}. However, despite the many advantages of deploying inference functions in proximity to the data collection point, current commodity platforms have limitations due to their highly constrained nature. Current commodity platforms do not have sufficient VRAM (memory) or computational density to support the very stringent performance requirements related to throughput and latency for modern Large Language Models\cite{Semerikov_Vakaliuk_Kanevska_Ostroushko_Kolhatin_2025}. Additionally, existing distributed inference frameworks are primarily throughput-oriented and therefore designed to optimize for "tokens per second" on homogeneous, high-end computing clusters rather than optimizing for "energy efficiency" and/or "heterogeneous hardware". Therefore, a critical void exists today with regard to providing environmentally sustainable, large-scale LLM inference capabilities across fragmented, resource-constrained environments\cite{202512.2383}.
+
+The problems outlined above are why we propose Kubernetes-based AI Inference (KAI) as a new, low-power, distributed AI inference framework. Since it was developed natively in Kubernetes\cite{11359958}, it has been designed to efficiently run large transformer models across many resources in a highly distributed cluster of small, resource-constrained, and heterogeneous devices. Unlike most other existing inference frameworks that sacrifice energy efficiency to achieve maximum throughput, this system operates using an "energy-first" paradigm. Although KAI uses substantially less energy than existing solutions, it produces similar or better output fidelity and latency metrics. Using a unified architecture for both single-node optimization and large-scale multi-node orchestration, this system makes large-scale AI inference more accessible.
+
+The overall design of KAI includes a single execution plane and a single control plane, with tight integration between them, working together to eliminate or reduce resource bottlenecks as needed. To meet KAI’s goals of high-performance computing and low-power consumption, it incorporates multiple specialized technologies that enhance performance and efficiency in distributed edge environments:
+
+KAI first uses an Adaptive Workload Partitioning technology to analyze the unique combinations of processing power, available memory, and power consumption across different types of hardware. Once it determines how to divide the workload based on these characteristics, KAI partitions the inference tasks into smaller chunks and assigns those task chunks to the specific node(s) that have the capability to complete them in the most efficient manner possible\cite{9721411}. This minimizes idle time and prevents resource waste.
+
+Secondly, the framework uses an Optimized Hybrid Parallelism and Model Placement Engine to perform an intelligent model sharding strategy. The parallelism strategy employed by the system combines two forms of parallelism: pipeline parallelism and tensor parallelism\cite{doi:10.36227/techrxiv.177078587.71524049/v1}. As part of this optimized hybrid approach, it uses a placement engine that analyzes real-time information regarding memory usage per node, compute capabilities of each node, and latency associated with data transfer between nodes in order to place individual layers/components of the neural network across the cluster in an optimal manner.
+
+Thirdly, since commodity hardware provides limited memory, KAI includes a Mixed Precision KV Cache Storage Mechanism designed to minimize the amount of memory required to store the Key Value (KV) cache while performing autoregressive generation with minimal loss of fidelity in terms of model outputs\cite{Fan_Chen_2026}.
+
+Finally, the core of KAI's ability to be aware of energy usage resides in its Closed-Loop Energy Feedback Controller. The Closed-Loop Energy Feedback Controller continually collects real-time telemetry information from throughout the distributed system, including power consumption and execution time\cite{11457869}. It uses the collected telemetry information to adjust execution variables as needed in real time, such as batch size, precision level, or maximum allowable power per node (the TDP constraint), in order to ensure that the total system always stays below an established budgetary limit for energy costs\cite{vikhe2024eara}.
+
+The system provides a structure for building a high-performance, scalable, highly distributed architecture capable of drastically reducing both normal energy consumption and the corresponding operating expense associated with running large language models on high-end GPU hardware. In addition, by providing the tools necessary for performing environmentally friendly and cost-effective computations, this paper presents a working model for how sustainable AI can be implemented.
+
+The major contributions of this paper are summarized
+below:
+\begin{itemize}
+    \item \textbf{New Framework Structure}: Development of a Kubernetes-native distributed inference framework called Kubernetes-based AI Inference (KAI). The framework is designed to scale transformer-based workloads to large sizes across a wide variety of heterogeneous nodes with limited resources and minimal cost.
+    \item \textbf{Energy-Based Resource Scheduling}: The framework uses a closed-loop telemetry and control system (TCS). The TCS is designed to monitor and modify real-time runtime parameter settings in order to minimize overall power consumption.
+    \item \textbf{Improved Memory Allocation and Node Placement}: A hybrid parallelism engine and mixed-precision KV cache are implemented within the framework. These improvements enable bypassing memory and bandwidth limitations inherent to commodity hardware.
+    \item \textbf{Experimentally Verified Results}: Multiple experiments demonstrate that the framework consumes approximately more than 50\% less total energy than similarly scalable high-end GPU-based cloud services, while maintaining comparable response times and reasonable latency.
+\end{itemize}
+
+\section{Literature Review and Related Research}
+\subsection{Literature Review}
+The proposed architecture exists within an emerging landscape of distributed inference systems and large language models. A full understanding of the strengths and weaknesses of current architectures helps determine how the proposed architecture can contribute to this space.
+
+Initially, most early approaches to addressing the significant computational overhead associated with large language models were centered around developing scalable training methods rather than scalable inference. For example, Megatron-LM was one of the first systems to utilize all-reduce collective communication primitives to perform tensor parallelization in order to train large language models efficiently at scale across homogeneous clusters of GPUs\cite{Shoeybi2019Megatron-LM:}. Although it has been shown to be very successful in reducing training times for large language models using large numbers of GPUs, Megatron-LM does not have the architectural features required to efficiently support real-time, low-latency inference, as it is inefficient with respect to power consumption, has a large footprint, and requires substantial memory to operate.
+
+In contrast to Megatron-LM's high cost, large footprint, and relatively poor performance when used for inference tasks, vLLM represents a newer class of lightweight inference engines. It is engineered specifically for single-GPU operation and introduces PagedAttention, a method for reducing memory fragmentation, optimizing key-value (KV) cache retrieval, and enabling integration between sparse and dense representations\cite{Kwon2023Efficient}. However, despite its memory efficiency, its design constraints limit it to operation on a single physical node, making it difficult to scale into distributed environments or apply in edge computing contexts.
+
+In order to understand how Petals differs from the proposed system in terms of its underlying structure and operational characteristics, it is important to recognize that Petals has been designed as a peer-to-peer inference mechanism\cite{Borzunov2022Petals:}. Consequently, its function and operation can be understood through comparison with the well-known peer-to-peer file-sharing paradigm exemplified by BitTorrent. In this regard, Petals supports collaborative processing across multiple nodes within a geographically dispersed network. This results in the elimination of centralized inference processing, as required in traditional systems used to support large-scale enterprises .
+
+While both the proposed system and Petals share a common focus on decentralizing inference processing, the architectural structure of Petals does not provide a structured control plane necessary for supporting reliable and predictable operations in large-scale or enterprise-grade edge computing environments.
+
+Additional foundational benchmarks for lightweight inference include Ollama. Ollama is an inference engine that provides an easily deployable, single-machine-based inference platform that relies heavily on quantized models in order to achieve low weight\cite{Husom2025Sustainable}. The primary advantage of Ollama as a baseline for lightweight inference is that it represents one of the most effective methods available for achieving very lightweight inference platforms\cite{Huang2025LLMs}. However, Ollama lacks multi-node orchestration features necessary for large-scale deployment.
+
+FlexGen, another example of a foundation for lightweight inference, achieves high-throughput inference on a single GPU by utilizing CPU offload and disk offload techniques\cite{Sheng2023High-throughput}. Similar to Ollama, while FlexGen shares the objective of vLLM in minimizing GPU memory bottlenecks and has demonstrated scalability across multiple nodes, it typically depends on secondary storage devices that are slower than main memory\cite{Sheng2023High-throughput,Ren2025An}. Therefore, it frequently fails to meet stringent real-time latency requirements.
+
+AlpaServe and Ray Serve represent examples of higher-level abstraction frameworks used for parallelizing inference tasks. AlpaServe uses a complex scheduling technique across tensor, data, and pipeline domains to provide insight into the theoretical foundations of hybrid parallelism\cite{Li2024A}. As an alternative, Ray Serve utilizes an actor-based execution model combined with dynamic scheduling\cite{Moritz2017Ray:}. As a result, it serves as a viable reference point for developing modern layers of orchestration.
+
+
+\subsection{Related Research}
+The body of literature from which this study is derived includes a number of significant areas: edge and cloud-edge scheduling for large language model inference; strategies for large-scale parallelism; techniques for optimizing KV caches and memory; and energy-aware AI system design \cite{miao2023survey,dash2025distributed}. In terms of edge and cloud-edge scheduling, prior research has focused on efficient worker selection, and the use of adaptive scheduling methods to order tasks dynamically in response to deadlines \cite{gundla2025multinode}, as well as on using adaptive partitioning to distribute segments of the model based on the heterogeneous capabilities of different types of devices, as opposed to statically partitioned strategies\cite{gundla2025multinode}. Additionally, there are studies examining how cloud-edge systems may employ active inference to perform task offload decisions based on beliefs regarding changing workloads, as opposed to employing reinforcement learning to select among possible offload options\cite{miao2023survey}. Furthermore, the authors note that existing infrastructure aware scheduling frameworks seek to develop solutions that optimize multiple objectives simultaneously, and include heuristics or fallbacks for when those optimizations are not feasible due to resource limitations within a given environment\cite{gundla2025multinode}.
+
+With respect to large-scale parallelism and the scaling of LLM service delivery, there are demonstrations (e.g., Tensor-Parallel Inference) that indicate that it is feasible to execute inference tasks in a distributed manner even in highly resource-constrained environments\cite{kwon2023pagedattention, chen2024inference}. There also exist pipeline parallelism frameworks that improve throughput by providing structure to both the partitioning of tasks among workers and their scheduling\cite{xu2025communication}. Finally, there exist large-scale systems (such as DeepSpeed), that implement additional memory and communications optimizations (e.g., ZeRO-style optimizations) that enable the execution of models with tens of hundreds of billions of parameters\cite{rasley2020deepspeed}. Collectively, these bodies of research demonstrate the potential for both hybrid forms of parallelism and system-wide optimization to scale inference performance\cite{narayanan2019pipedream,yang2025parallelism}.
+Research into optimization of KV cache management and the memory hierarchy seeks to mitigate memory bottlenecks that occur during inference\cite{kwon2023pagedattention,Kwon2023Efficient,Li2024A}. As an example, research into KV cache quantization indicates that selectively retaining precision can result in substantial reductions in memory usage without compromising output quality\cite{miao2023survey}. Research into dynamic KV placement across heterogeneous tiers of memory seeks to reduce bandwidth pressure and improve overall throughput\cite{dash2025distributed}. Other researchers have combined batching, quantization, and search-based scheduling methods to create additional optimization techniques that can be used in edge environments to increase efficiency. Decoding level optimizations have been proposed to further reduce synchronization overhead and improve memory reuse patterns\cite{yang2025parallelism}.
+
+Finally, studies focused on energy and sustainability issues associated with large language models seek to identify and address the increasingly important issue of the environmental impact of large language model systems\cite{miao2023survey}. Research into lifecycle energy models quantifies the entire computational cost of AI systems and highlights that inference time energy consumption and memory bound decoding stages are dominant contributors to total energy consumption \cite{Li2024A}. Additionally, other research has proposed composite efficiency metrics that consider runtime energy consumption, memory utilization, and carbon emissions. Overall, these findings reinforce the need for sustainable AI system designs\cite{dash2025distributed}.
+
+\subsection{Gap Analysis}
+An analysis of the academic contribution that KAI will make as an Energy-Aware Distributed Inference System based upon a Kubernetes environment; compared to several other systems presented in the provided source material including vLLM, Petals, FlexGen, and AlpaServe will be necessary. Each of these three systems has been developed as alternatives to a single aspect of how vLLM operates. Therefore, when analyzing how the framework compares to each of them (as described below), we are essentially identifying areas where KAI fills the gap.
+
+\begin{table*}[htbp]
+\centering
+\caption{Comparison of LLM Inference Frameworks}
+\label{tab:framework_comparison}
+\begin{tabularx}{\textwidth}{@{} 
+  >{\raggedright\arraybackslash}X 
+  >{\raggedright\arraybackslash}X 
+  >{\raggedright\arraybackslash}X 
+  >{\raggedright\arraybackslash}X 
+  >{\raggedright\arraybackslash}X 
+  >{\raggedright\arraybackslash}X 
+@{}}
+\toprule
+\textbf{Feature / Framework} & \textbf{vLLM} & \textbf{Petals} & \textbf{FlexGen} & \textbf{AlpaServe} & \textbf{KAI} \\
+\midrule
+
+\textbf{Primary Architecture} & 
+Lightweight inference engine. & 
+Decentralized peer-to-peer system. & 
+High-throughput inference system. & 
+High-level parallelization strategy. & 
+Distributed structured cluster on Kubernetes. \\
+\addlinespace
+
+\textbf{Scalability} & 
+Not scalable beyond one node. & 
+Scales via peer collaboration without central orchestration. & 
+Capable of scaling over multiple nodes. & 
+Scales across tensor, data, and pipeline dimensions. & 
+Scalable multi-node execution with dynamic partitioning. \\
+\addlinespace
+
+\textbf{Hardware Focus} & 
+Optimized for single GPU. & 
+Collaborative peer hardware. & 
+Single GPU with CPU/disk offload techniques. & 
+General parallelization environments. & 
+Small, resource-constrained, heterogeneous commodity devices. \\
+\addlinespace
+
+\textbf{Memory / Cache Strategy} & 
+Paged attention; optimized KV cache access. & 
+Decentralized distribution. & 
+Offloads to CPU and disk to minimize memory usage. & 
+Not explicitly detailed as a core focus. & 
+Mixed Precision KV Cache Optimization. \\
+\addlinespace
+
+\textbf{Energy \& Feedback Control} & 
+None explicitly identified. & 
+None explicitly identified. & 
+None explicitly identified. & 
+Flexible scheduling strategy. & 
+Closed Loop Energy Feedback Controller to minimize energy per token. \\
+
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+The Identified gap in current reasearch include:
+\begin{itemize}
+    \item The lack of distributed inference as well as a structured energy-aware architecture for inference. Petals allows for decentralizing the model distribution, however, does not offer a structured architecture for distributing the models nor a central orchestrator\cite{Borzunov2022Petals:}. On the other hand, KAI provides an architecture based upon Kubernetes which is structured into clusters. Additionally, none of the previous architectures included a closed-loop energy feedback controller to monitor and adjust parameters (e.g., batch size, power limitations) at runtime to optimize energy usage\cite{strubell2019energy}. 
+    \item Single Node Optimization vs. Scalability of Engines and High-End GPU Based Architectures\cite{kwon2023pagedattention,Kwon2023Efficient}. Highly optimized engines such as vLLM have excellent memory management due to paged attention; however, these engines are unable to be scaled beyond one node. Moreover, most traditional engines use high-end GPUs which are very expensive. KAI will bridge this gap by providing a scalable architecture which was specifically designed to operate on low cost, constrained commodity hardware\cite{xu2025communication}. 
+    \item The rigid nature of workload partitioning across different types of devices. AlpaServe has provided good guidance toward hybrid parallelism techniques (i.e., tensor, data and pipeline); however, AlpaServe is a generic purpose scheduling technique. FlexGen supports multi-node scaling; however, FlexGen's support is highly dependent on CPU/Disk offloading to manage memory. KAI improves upon both AlpaServe and FlexGen by providing adaptive workload partitioning where each workload can be dynamically mapped to the best fitting capability of the various edge devices or laboratory clusters\cite{dash2025distributed,miao2023survey}. 
+    \item Achieving optimal balance of energy efficiency versus output fidelity. Currently, all models suffer from either consuming excessive power on high-end platforms or degrading their model quality through heavy compression to fit within the confines of smaller platforms\cite{Husom2025Sustainable}. KAI will address GAP 4 by utilizing mixed precision storage for kv-cache optimization to reduce memory footprint while maintaining the strictest level of output fidelity.
+
+\end{itemize}
+
+\section{Methodology}
+
+This section outlines the research methodology we employed to design, implement, and evaluate KAI. Our approach follows a systematic framework that starts with problem formulation, moves through system design and algorithm development, and ends with implementation, measurement, and validation of our proposed framework.
+
+\subsection{Problem Formulation}
+Low-cost Hardware (i.e. Commodity Devices) are becoming increasingly unable to support the Computational Requirements of Large Language Models because of their memory requirements, processing power needs, and need for Inference Throughput Stability. Most Solutions have focused on using Expensive Cloud-Based High-End GPUs, which can severely degrade Model Quality by Compressing it Aggressively, or simply don't adapt well enough to Heterogeneous Edge Environments or Laboratory Clusters. This Project will provide a Distributed Inference Framework that supports Low-Cost Hardware and Optimizes Key Performance Factors (Energy Consumption, Latency, Fairness). Specifically, the Research Focus is on Ensuring Memory Feasibility at the Node Level, Meeting Deadlines/Latencies, and Maintaining an Acceptable Response Quality. 
+
+\subsection{System Model and Architecture}
+The System Architecture was organized in to two main planes; the Control Plane and the Execution Plane. The Control Plane contains the gateway, scheduler, monitor, and Tuning Controller that were able to process incoming requests, allocate resources, observe the system, and optimize it adaptively. The Execution Plane contained distributed Chunk Workers that would host segment portions of the model that could be computed. In addition to being layered (Control/Execution), the system was divided into several Function Modules including the Gateway for controlling how requests enter and exit the inference process, Model Partitioner for determining which layers of the model should run on which workers, Scheduler for determining how tasks map to execution nodes, Monitor for gathering Telemetry Data related to Power Usage, Latency and Queue Depth, and finally the Controller for making updates to system policies via Adaptive Optimization Mechanisms.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig2.png}
+  \caption{System architecture}
+  \label{fig2:System architecture}
+\end{figure}
+
+\subsection{Data Description}
+The research will use a variety of sources of data, which includes publicly available large language models for inference testing, common evaluation benchmarks/prompts/datasets, and real-time telemetry data that is collected when the system runs. There are also a number of characteristics that the data will have. For example, it will be possible to vary the length of prompts entered into the system (short/long), in addition to varying the bounds on how much the system generates in terms of outputs based on fixed limits. Also, there will be time-based telemetry data collected while the system is running to capture metrics related to KPIs, including, but limited to, power consumption, latency, throughput, and memory usage. In order to allow for complete analysis of the results, a variety of feature types will be collected. 
+
+\subsection{Data Preprocessing}
+The steps that will occur in the Data Preprocessing Pipeline are:
+Cleaning: Removing incomplete telemetry readings; remove experimental run failures from the record set and synchronize timestamp values from each module.
+Normalization: Normalize latency and throughput measures by scaling them so they can be compared. Convert power consumption values to measure relative to device capacity. 
+Feature Engineering: Compute new (derived) metric(s): Energy efficiency; Fairness among workers at the distributed layer; Indicators for bottleneck pressures within queues and the system as a whole.
+Data Splitting: Partition the processed data with a data split method to create Training Set; Validation Set; Test Set. Create separate sets to evaluate policies on unseen workload data and utilize time-based data splits when evaluating sequentially captured telemetry.
+
+
+\subsection{Proposed Method}
+In order to provide efficient distribution of inferences as well as balance out performance and resource constraints; multiple algorithmic elements have been developed to help accomplish that. Elements include a fair and cost-effective worker selection strategy, a dynamic task ordering methodology to allow for optimal assignment (to select the best order for tasks), and optionally an optimization solver when there are many variables in terms of resources and time constraints. When exact optimization becomes too costly to compute, we plan to employ heuristics-based fallback to ensure that the overall system remains as efficient as possible. For every incoming request our process will operate in an iterative manner; first we will extract features from the workload, next we will rank the candidate workers using their feasibility and performance characteristics. We will then assign model layer segments to the worker(s) based upon the amount of capacity they currently possess. Following this step, we will execute a distributed forward pass through the network. Throughout and after executing these steps we collect telemetry data and update our scheduling policy as needed once we detect any type of bottleneck or inefficiency.
+
+\subsection{Baseline Methods}
+To assess the effectiveness of the proposed system, it is compared to three baseline configurations: A) a single GPU-based inference approach; B) an optimized single machine-based runtime (optimized for either one or multiple GPUs); C) a distributed system without the proposed scheduling/energy efficiency features. Baseline systems were chosen as representative examples of current practices utilized by industry and academia. Thus, through comparison of the proposed system's results (costs, latencies, etc.) relative to the baseline systems' results, the authors can assure that any differences observed are significant and relevant and provide evidence for the benefits associated with the use of the proposed system.
+
+\subsection{Implementation and Experimental Setup}
+KAI is implemented in Python with PyTorch, gRPC, and Kubernetes. Experiments are executed in three modes: local (single node), Kubernetes (multi-node), and combined comparison. Each run includes warmup iterations, a fixed batch size, and controlled sampling parameters such as temperature, top-k, and top-p to keep comparisons consistent across runs.
+
+\subsection{Evaluation Metrics}
+The proposed systems will be evaluated using multiple metrics for measuring both the performance and efficiency of the system. The proposed systems will be measured using two types of latency measures; Time-To-First-Token (TTFT) which represents how long it takes for the first token to generate from the input sentence and Per-Token Generation Time (PTGT) which represents how long it takes for each additional token after the first one to be generated. Throughput will be represented in terms of Tokens Per Second (TPS). Three energy related metrics will also be used to evaluate the proposed systems. They are Total Energy Consumption (TEC), in watt hours (Wh); An Energy Efficiency Ratio (EER) to determine the computational performance compared to the amount of energy used; A Fairness Index to determine if the resources are being fairly distributed among the worker(s); Cost per Inference Run to provide an economical perspective of the proposal; Output Quality Consistency to make sure that no optimization compromises reliable responses. The metrics were chosen because they represent both a performance metric and a sustainable metric for evaluating the proposed systems.
+
+\subsection{Validation Strategy}
+Validation will be done using holdout testing (with new test prompts), as well as cross scenario evaluation (to evaluate how the system performs at each of the multiple workloads). The Tuning Strategy will start with a Grid Search through all possible initial parameters, followed by a Bayesian Optimization, or Heuristic Refinement approach, to allow for an efficient method of optimizing. After tuning is complete, we will perform Robustness Testing, Under Stress Conditions to determine if our system remains stable and continues to run properly even when loaded heavily.
+
+\subsection{Workflow / Pipeline}
+The flow of the end-to-end system starts by obtaining a user request that will be tokenized (broken into individual words) and have its profile extracted for information regarding the work load. Once the workload has been identified through the profiling process, an appropriate scheduling strategy can be determined and computational resources may be allocated according to that decision. The system will execute distributed inferences on each of the worker nodes and the partial results will be aggregated to provide the final response. Telemetry data will be continuously recorded during execution and the control policy will be adjusted as needed based upon observations made about the system's performance. Overall, the system flow is :
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig3.png}
+  \caption{Flowchart of the proposed system}
+  \label{fig:method}
+\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig4.png}
+  \caption{Proposed pipeline}
+  \label{fig:method}
+\end{figure}
+
+
+
+\subsection{Assumptions and Limitations}
+The authors assume a number of things in this research. They assume that the current methods used to profile computing nodes will provide accurate representations of each nodes' level of performance. They assume that they know how much it will cost to communicate between different nodes and that these costs are relatively easy to manage. Authors also assumed that their benchmark programs will be similar enough to what people do on an average day with computers so as to give some idea of real-world application. Another assumption made by authors was that when they optimize something, they won't have to sacrifice too much of its functionality. In addition, authors believe they will have sufficient information about a computing system to be able to detect problems and make adjustments. While it's possible the authors' system will scale well (and thus continue to operate effectively) as more users get involved; there is also a good chance the system may not because of the additional architecture and coordination overhead that will occur as more users join in. As previously mentioned network inconsistencies and differences in hardware components may cause results from their system to vary both in terms of accuracy and fairness. Lastly, while the authors appear to think that the optimization of their system will be feasible in practice (i.e., they don't expect it to be overly difficult), they acknowledge that it may not be fully fault-tolerant.
+\bibliographystyle{unsrt}
+\bibliography{papercite}
+
+
+\end{document}

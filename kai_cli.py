@@ -214,13 +214,17 @@ def _run_single_node_offload(args, loader, nodes, quantize=None):
         "trust_remote_code": args.trust_remote_code,
         "token": args.token,
         "device_map": "auto",
-        "offload_folder": args.disk_swap_dir,
-        "offload_state_dict": True,
         "max_memory": {
             0: f"{int(gpu_budget_mb)}MiB",
             "cpu": f"{int(ram_budget_mb)}MiB",
         },
     }
+
+    # On Windows, explicit offload_folder has triggered native access violations
+    # in some accelerate/torch combinations. Let HF/accelerate choose defaults.
+    if os.name != "nt":
+        model_kwargs["offload_folder"] = args.disk_swap_dir
+        model_kwargs["offload_state_dict"] = True
 
     if quantize in ("4bit", "8bit"):
         try:
@@ -239,6 +243,17 @@ def _run_single_node_offload(args, loader, nodes, quantize=None):
             logger.warning("bitsandbytes quantization unavailable: %s", e)
 
     print("[KAI] Loading model with Accelerate offload...")
+    # Try to reduce allocator fragmentation and clear cached memory first.
+    try:
+        os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
+    except Exception:
+        pass
+    try:
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        pass
+
     model = AutoModelForCausalLM.from_pretrained(args.model, **model_kwargs)
     model.eval()
 
@@ -1647,4 +1662,18 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Enable faulthandler for low-level crashes and ensure full Python
+    # tracebacks are printed to the console for debugging.
+    try:
+        import faulthandler
+        faulthandler.enable()
+    except Exception:
+        pass
+
+    try:
+        main()
+    except Exception:
+        import traceback, sys
+
+        traceback.print_exc()
+        sys.exit(1)

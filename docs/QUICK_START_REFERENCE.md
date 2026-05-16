@@ -34,19 +34,19 @@ STEP 2: LAUNCH DASHBOARD (1 min)
 ║ Then Open: http://localhost:8501                               ║
 ║                                                                 ║
 ║ Should see 7 tabs in left sidebar:                              ║
-║   🏠 Home                                                       ║
-║   ⚡ Live Inference                                             ║
-║   📊 Performance Monitor                                        ║
-║   💾 KV Cache Analytics                                         ║
-║   🔄 Routing Telemetry                                          ║
-║   📈 Comparisons & Benchmarks                                   ║
-║   ⚙️ System Config                                              ║
+║    Home                                                       ║
+║    Live Inference                                             ║
+║    Performance Monitor                                        ║
+║    KV Cache Analytics                                         ║
+║    Routing Telemetry                                          ║
+║    Comparisons & Benchmarks                                   ║
+║    System Config                                              ║
 ╚════════════════════════════════════════════════════════════════╝
 
 
 STEP 3: RUN LIVE INFERENCE (3 min)
 ╔════════════════════════════════════════════════════════════════╗
-║ 1. Click on "⚡ Live Inference" tab                             ║
+║ 1. Click on " Live Inference" tab                             ║
 ║ 2. Select model:                                                ║
 ║    - Option 1: Pick from dropdown (e.g., microsoft/phi-2)      ║
 ║    - Option 2: Enter custom model (e.g., google/gemma-2b)      ║
@@ -61,7 +61,7 @@ STEP 3: RUN LIVE INFERENCE (3 min)
 ║    - Device: auto (detects GPU)                                 ║
 ║    - ✓ Use KV Cache (checked - important!)                      ║
 ║    - Cache Precision: FP16                                      ║
-║ 6. Click purple "🚀 Generate" button                            ║
+║ 6. Click purple " Generate" button                            ║
 ║                                                                 ║
 ║ Watch in real-time:                                             ║
 ║   • Model loading progress bar                                  ║
@@ -73,7 +73,7 @@ STEP 3: RUN LIVE INFERENCE (3 min)
 
 STEP 4: VIEW PERFORMANCE METRICS (1 min)
 ╔════════════════════════════════════════════════════════════════╗
-║ Click on "📊 Performance Monitor" tab                           ║
+║ Click on " Performance Monitor" tab                           ║
 ║                                                                 ║
 ║ You should see:                                                 ║
 ║   • Routing decisions: ~2800+                                   ║
@@ -89,7 +89,7 @@ STEP 4: VIEW PERFORMANCE METRICS (1 min)
 
 STEP 5: ANALYZE KV CACHE BENEFITS
 ╔════════════════════════════════════════════════════════════════╗
-║ Click on "💾 KV Cache Analytics" tab                            ║
+║ Click on " KV Cache Analytics" tab                            ║
 ║                                                                 ║
 ║ See these improvements:                                         ║
 ║   • Memory Saved: 45%                                           ║
@@ -112,28 +112,28 @@ STEP 5: ANALYZE KV CACHE BENEFITS
 
 STEP 6: COMPARE IMPROVEMENTS (1 min)
 ╔════════════════════════════════════════════════════════════════╗
-║ Click on "📈 Comparisons & Benchmarks" tab                      ║
+║ Click on " Comparisons & Benchmarks" tab                      ║
 ║                                                                 ║
 ║ 4 sub-tabs showing:                                             ║
 ║                                                                 ║
-║   1. 📊 Overall Summary                                         ║
+║   1.  Overall Summary                                         ║
 ║      • Network measurement: Synthetic → Real TCP/ping ✓         ║
 ║      • Probe speed: N/A → 900x faster ✓                         ║
 ║      • Decision latency: Unknown → 0.3-0.5ms ✓                  ║
 ║      • KV cache memory: 100% → 30-75% savings ✓                 ║
 ║      • Telemetry overhead: N/A → <0.01% ✓                       ║
 ║                                                                 ║
-║   2. 🛣️ Routing Improvements (before/after chart)              ║
+║   2.  Routing Improvements (before/after chart)              ║
 ║      • Latency: 6.6x faster                                    ║
 ║      • Consistency: 100% deterministic                         ║
 ║      • Overhead: 250x reduction                                ║
 ║                                                                 ║
-║   3. 💾 KV Cache Gains (memory reduction chart)                 ║
+║   3.  KV Cache Gains (memory reduction chart)                 ║
 ║      • Memory: 47% reduction                                   ║
 ║      • Cache hit rate: 78.6%                                   ║
 ║      • Capacity: 3-4x more models                              ║
 ║                                                                 ║
-║   4. ⚡ Network Optimization                                   ║
+║   4.  Network Optimization                                   ║
 ║      • Probe caching: 900x speedup                             ║
 ║      • Real measurements: Accurate vs synthetic                ║
 ║      • Deterministic routing: Consistent behavior              ║
@@ -143,7 +143,7 @@ STEP 6: COMPARE IMPROVEMENTS (1 min)
 STEP 7: EXPORT RESULTS (optional)
 ╔════════════════════════════════════════════════════════════════╗
 ║ In Performance Monitor tab:                                    ║
-║   • Click "📥 Export Metrics" button                            ║
+║   • Click " Export Metrics" button                            ║
 ║   • Downloads: metrics_[timestamp].json                         ║
 ║                                                                 ║
 ║ Use for:                                                        ║
@@ -162,12 +162,12 @@ KEY METRICS TO WATCH
    • Throughput: 50-250 tok/s depending on model
    • KV Cache Hit Rate: 70-80% (excellent reuse)
 
-💾 Memory Metrics:
+ Memory Metrics:
    • Memory Saved: 30-75% (shown in KV Cache tab)
    • Compression Ratio: 2-4x
    • Token Memory: 0.5-1.0 bytes (vs 2-4 bytes without compression)
 
-📊 Routing Metrics:
+ Routing Metrics:
    • Total Decisions: Should grow as you run more inferences
    • Host Distribution: Should show balanced load
    • Per-Host Latency: Should be similar for all hosts
@@ -237,11 +237,11 @@ SUCCESS INDICATORS
 NEXT STEPS AFTER QUICK START
 ════════════════════════════════════════════════════════════════
 
-1. 🔄 Try different models in Live Inference
-2. 📊 Run Performance tests: python tests/test_performance_improvements.py
+1.  Try different models in Live Inference
+2.  Run Performance tests: python tests/test_performance_improvements.py
 3. 🧪 Run more inferences to see metrics accumulate
-4. 💾 Enable/disable KV Cache to see difference
-5. ⚙️ Check System Config tab for tuning options
+4.  Enable/disable KV Cache to see difference
+5.  Check System Config tab for tuning options
 6. 📥 Export metrics for your records
 7. 🚀 Deploy to Kubernetes (see COMPREHENSIVE_DASHBOARD_GUIDE.md)
 

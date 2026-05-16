@@ -47,12 +47,12 @@ The dashboard will open at: http://localhost:8501
 
 Dashboard Tabs:
   1. 🏠 Home - Overview & key metrics
-  2. ⚡ Live Inference - Run models without command line
-  3. 📊 Performance Monitor - Routing & inference stats
-  4. 💾 KV Cache Analytics - Memory savings & hit rates
-  5. 🔄 Routing Telemetry - Network latency analysis
-  6. 📈 Comparisons - Before/after metrics
-  7. ⚙️ System Config - Settings & status
+  2.  Live Inference - Run models without command line
+  3.  Performance Monitor - Routing & inference stats
+  4.  KV Cache Analytics - Memory savings & hit rates
+  5.  Routing Telemetry - Network latency analysis
+  6.  Comparisons - Before/after metrics
+  7.  System Config - Settings & status
 
 
 STEP 3: Try Live Inference
@@ -380,9 +380,9 @@ To deploy to K8s:
 1. ✅ Validate KV Cache (see STEP 1 above)
 2. ✅ Launch Dashboard (see STEP 2 above)
 3. ✅ Try Live Inference (see STEP 3 above)
-4. 📊 Monitor Performance (see STEP 4 above)
-5. 💾 Analyze KV Cache (see STEP 5 above)
-6. 📈 Review Improvements (see STEP 6 above)
+4.  Monitor Performance (see STEP 4 above)
+5.  Analyze KV Cache (see STEP 5 above)
+6.  Review Improvements (see STEP 6 above)
 7. 📥 Export Results (see STEP 7 above)
 8. 🚀 Deploy to production (Kubernetes ready)
 

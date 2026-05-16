@@ -52,7 +52,7 @@ def _select_dashboard_python(prefer_gpu: bool = True) -> str:
 
 def cmd_dashboard_pro(args):
     """Launch comprehensive pro dashboard."""
-    logger.info("🚀 Launching Comprehensive Dashboard Pro...")
+    logger.info("   Launching Comprehensive Dashboard Pro...")
     logger.info("   Dashboard will open at: http://localhost:8501")
     logger.info("   Pages: Home, Live Inference, Performance, KV Cache, Routing, Comparisons, Config")
     logger.info("")
@@ -79,7 +79,7 @@ def cmd_dashboard_pro(args):
 
 def cmd_dashboard_energy(args):
     """Launch energy comparison dashboard."""
-    logger.info("🔋 Launching Energy Comparison Dashboard...")
+    logger.info(" Launching Energy Comparison Dashboard...")
     
     cmd = [
         sys.executable, '-m', 'streamlit', 'run',
@@ -94,7 +94,7 @@ def cmd_dashboard_energy(args):
 
 def cmd_dashboard_unified(args):
     """Launch unified control dashboard."""
-    logger.info("🎛️ Launching Unified Control Dashboard...")
+    logger.info(" Launching Unified Control Dashboard...")
     
     cmd = [
         sys.executable, '-m', 'streamlit', 'run',
@@ -109,7 +109,7 @@ def cmd_dashboard_unified(args):
 
 def cmd_dashboard_telemetry(args):
     """Launch telemetry metrics dashboard."""
-    logger.info("📊 Launching Telemetry Metrics Dashboard...")
+    logger.info(" Launching Telemetry Metrics Dashboard...")
     
     cmd = [
         sys.executable, '-m', 'streamlit', 'run',
@@ -128,7 +128,7 @@ def cmd_dashboard_telemetry(args):
 
 def cmd_validate_kv_cache(args):
     """Validate KV cache implementation."""
-    logger.info("🧪 Running KV Cache Validation Tests...")
+    logger.info("   Running KV Cache Validation Tests...")
     logger.info("   This will:")
     logger.info("   • Import and verify KV cache modules")
     logger.info("   • Test quantization and memory savings")
@@ -144,7 +144,7 @@ def cmd_validate_kv_cache(args):
     result = subprocess.run(cmd, check=False)
     
     if result.returncode == 0:
-        logger.info("\n✅ KV Cache validation PASSED")
+        logger.info("\n KV Cache validation PASSED")
         logger.info("   Check logs/kv_cache_validation_*.json for detailed results")
     else:
         logger.error("\n❌ KV Cache validation FAILED")
@@ -152,7 +152,7 @@ def cmd_validate_kv_cache(args):
 
 def cmd_validate_performance(args):
     """Validate performance improvements."""
-    logger.info("📈 Running Performance Validation...")
+    logger.info("   Running Performance Validation...")
     logger.info("   Measured improvements:")
     logger.info("   • Probe caching: 900x speedup (0.05ms)")
     logger.info("   • Routing consistency: 100% deterministic")
@@ -168,7 +168,7 @@ def cmd_validate_performance(args):
     result = subprocess.run(cmd, check=False)
     
     if result.returncode == 0:
-        logger.info("\n✅ Performance validation PASSED")
+        logger.info("\n Performance validation PASSED")
     else:
         logger.warning("\n⚠️ Performance tests completed (some warnings OK)")
 
@@ -178,7 +178,7 @@ def cmd_validate_performance(args):
 
 def cmd_benchmark_kv_cache(args):
     """Benchmark KV cache performance."""
-    logger.info("⚡ Benchmarking KV Cache Performance...")
+    logger.info("   Benchmarking KV Cache Performance...")
     logger.info("   Comparing:")
     logger.info("   • Without KV cache")
     logger.info("   • With mixed-precision KV cache")
@@ -229,7 +229,7 @@ def cmd_benchmark_kv_cache(args):
             cache.get([0], [0])
         get_time = (time.perf_counter() - start) / 100 * 1000  # ms
         
-        logger.info(f"\n✅ Benchmark Results:")
+        logger.info(f"\nBenchmark Results:")
         logger.info(f"  • Avg update time: {update_time:.3f}ms")
         logger.info(f"  • Avg get time: {get_time:.3f}ms")
         logger.info(f"  • Memory saved vs FP32: ~45-60%")
@@ -245,9 +245,9 @@ def cmd_benchmark_kv_cache(args):
 
 def cmd_info_dashboards(args):
     """Show available dashboards."""
-    logger.info("📊 Available Dashboards:")
+    logger.info("Available Dashboards:")
     logger.info("")
-    logger.info("1. 🚀 Comprehensive Pro Dashboard (RECOMMENDED)")
+    logger.info("1. Comprehensive Pro Dashboard (RECOMMENDED)")
     logger.info("   Command: python kai_cli_dashboard.py dashboard-pro")
     logger.info("   Features:")
     logger.info("   • Live model inference (GUI, no CLI)")
@@ -258,7 +258,7 @@ def cmd_info_dashboards(args):
     logger.info("   Port: 8501")
     logger.info("")
     
-    logger.info("2. 🔋 Energy Comparison Dashboard")
+    logger.info("2. Energy Comparison Dashboard")
     logger.info("   Command: python kai_cli_dashboard.py dashboard-energy")
     logger.info("   Features:")
     logger.info("   • Local vs Kubernetes energy comparison")
@@ -266,7 +266,7 @@ def cmd_info_dashboards(args):
     logger.info("   Port: 8502")
     logger.info("")
     
-    logger.info("3. 🎛️ Unified Control Dashboard")
+    logger.info("3. Unified Control Dashboard")
     logger.info("   Command: python kai_cli_dashboard.py dashboard-unified")
     logger.info("   Features:")
     logger.info("   • System control interface")
@@ -275,7 +275,7 @@ def cmd_info_dashboards(args):
     logger.info("   Port: 8503")
     logger.info("")
     
-    logger.info("4. 📈 Telemetry Metrics Dashboard")
+    logger.info("4. Telemetry Metrics Dashboard")
     logger.info("   Command: python kai_cli_dashboard.py dashboard-telemetry")
     logger.info("   Features:")
     logger.info("   • Flask-based metrics UI")
@@ -285,7 +285,7 @@ def cmd_info_dashboards(args):
 
 def cmd_info_kv_cache(args):
     """Show KV cache information."""
-    logger.info("💾 KV Cache Implementation Details:")
+    logger.info(" KV Cache Implementation Details:")
     logger.info("")
     logger.info("Technology Stack:")
     logger.info("  • Mixed-precision storage")
@@ -313,29 +313,29 @@ def cmd_info_kv_cache(args):
 
 def cmd_info_improvements(args):
     """Show what's been improved."""
-    logger.info("✨ Performance Improvements Summary:")
+    logger.info(" Performance Improvements Summary:")
     logger.info("")
-    logger.info("1. 🛣️ Deterministic Routing")
+    logger.info("1. Deterministic Routing")
     logger.info("   Before: Unknown behavior")
     logger.info("   After: 0.3-0.5ms decision latency")
     logger.info("   Benefit: Quantified, reproducible routing")
     logger.info("")
-    logger.info("2. ⚡ Probe Caching")
+    logger.info("2. Probe Caching")
     logger.info("   Before: N/A")
     logger.info("   After: 900x speedup (0.05ms vs 45ms)")
     logger.info("   Benefit: Instant network latency lookup")
     logger.info("")
-    logger.info("3. 💾 KV Cache Optimization")
+    logger.info("3. KV Cache Optimization")
     logger.info("   Before: Not implemented")
     logger.info("   After: 30-75% memory savings")
     logger.info("   Benefit: 3-4x more models on same hardware")
     logger.info("")
-    logger.info("4. 📊 Comprehensive Telemetry")
+    logger.info("4. Comprehensive Telemetry")
     logger.info("   Before: Limited visibility")
     logger.info("   After: 50+ real-time metrics")
     logger.info("   Benefit: Complete transparency into system")
     logger.info("")
-    logger.info("5. 🎯 Real Network Measurement")
+    logger.info("5. Real Network Measurement")
     logger.info("   Before: Synthetic metrics only")
     logger.info("   After: Real TCP/ping latency probes")
     logger.info("   Benefit: Accurate routing decisions")

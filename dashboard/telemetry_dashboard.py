@@ -204,7 +204,7 @@ DASHBOARD_HTML = """
     
     <div class="container">
         <div class="refresh-button">
-            <button onclick="location.reload()">🔄 Refresh Dashboard</button>
+            <button onclick="location.reload()"> Refresh Dashboard</button>
             <button onclick="downloadReport()">📥 Download Report</button>
         </div>
         
@@ -215,21 +215,21 @@ DASHBOARD_HTML = """
         </div>
         
         <div class="chart-container">
-            <div class="chart-title">📊 Routing Performance</div>
+            <div class="chart-title"> Routing Performance</div>
             <div class="chart-box">
                 <canvas id="routingChart"></canvas>
             </div>
         </div>
         
         <div class="chart-container">
-            <div class="chart-title">⚡ Inference Throughput (tokens/sec)</div>
+            <div class="chart-title"> Inference Throughput (tokens/sec)</div>
             <div class="chart-box">
                 <canvas id="throughputChart"></canvas>
             </div>
         </div>
         
         <div class="chart-container">
-            <div class="chart-title">🌐 Network Latency by Host</div>
+            <div class="chart-title"> Network Latency by Host</div>
             <div class="chart-box">
                 <canvas id="latencyChart"></canvas>
             </div>
@@ -254,7 +254,7 @@ DASHBOARD_HTML = """
         </div>
         
         <div class="table-container">
-            <div class="chart-title">🛣️ Recent Routing Decisions</div>
+            <div class="chart-title"> Recent Routing Decisions</div>
             <table id="routingTable">
                 <thead>
                     <tr>
