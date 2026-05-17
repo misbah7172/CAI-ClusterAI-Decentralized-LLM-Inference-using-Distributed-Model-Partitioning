@@ -19,6 +19,7 @@ Usage::
     output = engine.forward(model_chunk, input_tensor)
 """
 
+import copy
 import logging
 import math
 import threading
@@ -108,7 +109,7 @@ class TensorSplitter:
             padding = torch.zeros(pad_shape, dtype=tensor.dtype, device=tensor.device)
             tensor = torch.cat([tensor, padding], dim=dim)
         
-        return torch.chunk(tensor, num_splits, dim=dim)
+        return list(torch.chunk(tensor, num_splits, dim=dim))
     
     @staticmethod
     def gather_tensor(
@@ -172,16 +173,28 @@ class AttentionParallel(nn.Module):
         self.attention = attention_module
         self.devices = devices
         self.num_heads = num_heads
-        self.heads_per_device = num_heads // len(devices)
+        self.heads_per_device = max(1, num_heads // max(1, len(devices)))
+        self._replicas: Dict[str, nn.Module] = {}
         
         # Split attention weights across devices
         self._split_weights()
     
     def _split_weights(self) -> None:
-        """Split attention weights by head dimension."""
-        # This is a simplified version - full implementation would
-        # actually move weight slices to different devices
-        pass
+        """Prepare per-device replicas for attention execution.
+
+        This is a practical single-process fallback: each device gets a
+        lazily-created module replica. That keeps the runtime functional even
+        when torch.distributed is not initialised.
+        """
+        self._replicas.clear()
+
+    def _get_replica(self, device: str) -> nn.Module:
+        if device not in self._replicas:
+            replica = copy.deepcopy(self.attention)
+            replica = replica.to(device)
+            replica.eval()
+            self._replicas[device] = replica
+        return self._replicas[device]
     
     def forward(
         self,
@@ -190,35 +203,41 @@ class AttentionParallel(nn.Module):
         **kwargs,
     ) -> Tensor:
         """Forward with tensor parallelism."""
-        batch_size, seq_len, hidden_dim = hidden_states.shape
-        
         if len(self.devices) == 1:
             # No parallelism needed
             return self.attention(hidden_states, attention_mask=attention_mask, **kwargs)
         
-        # Split by head dimension and compute in parallel
-        outputs = []
-        
-        # For each device, compute subset of heads
-        for i, device in enumerate(self.devices):
-            start_head = i * self.heads_per_device
-            end_head = (i + 1) * self.heads_per_device
-            
-            # Move input to device
-            device_input = hidden_states.to(device)
-            
-            # Compute attention (simplified - would need head-specific weights)
-            with torch.cuda.device(device) if "cuda" in device else torch.device(device):
-                output = self.attention(
-                    device_input,
-                    attention_mask=attention_mask.to(device) if attention_mask is not None else None,
-                    **kwargs
-                )
-            
-            outputs.append(output)
-        
-        # Gather outputs
-        return TensorSplitter.gather_tensor(outputs, dim=-1)
+        # Practical parallel fallback: shard the batch across devices and gather
+        # the results. This is deterministic and works with arbitrary attention
+        # modules without assuming a specific internal projection layout.
+        chunks = TensorSplitter.split_tensor(hidden_states, len(self.devices), dim=0)
+        outputs: List[Tensor] = [None] * len(chunks)  # type: ignore[assignment]
+        errors: List[Exception] = []
+
+        def _run_shard(index: int, device: str, shard: Tensor) -> None:
+            try:
+                replica = self._get_replica(device)
+                shard_device = shard.to(device)
+                mask = attention_mask.to(device) if attention_mask is not None else None
+                with torch.no_grad():
+                    result = replica(shard_device, attention_mask=mask, **kwargs)
+                outputs[index] = result.to(hidden_states.device)
+            except Exception as exc:  # pragma: no cover - surfaced to caller
+                errors.append(exc)
+
+        threads = []
+        for index, (device, shard) in enumerate(zip(self.devices, chunks)):
+            thread = threading.Thread(target=_run_shard, args=(index, device, shard), daemon=True)
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+        if errors:
+            raise errors[0]
+
+        return TensorSplitter.gather_tensor(outputs, dim=0)
 
 
 class FeedForwardParallel(nn.Module):
@@ -243,18 +262,47 @@ class FeedForwardParallel(nn.Module):
         self.ffn = ffn_module
         self.devices = devices
         self.num_splits = len(devices)
+        self._replicas: Dict[str, nn.Module] = {}
     
     def forward(self, hidden_states: Tensor) -> Tensor:
         """Forward with column-parallel / row-parallel strategy."""
         if len(self.devices) == 1:
             return self.ffn(hidden_states)
-        
-        # Column-parallel: split output dimension
-        # Row-parallel: split input dimension
-        
-        # Simplified implementation
-        # Full impl would split weights and compute in parallel
-        return self.ffn(hidden_states)
+
+        def _get_replica(device: str) -> nn.Module:
+            if device not in self._replicas:
+                replica = copy.deepcopy(self.ffn)
+                replica = replica.to(device)
+                replica.eval()
+                self._replicas[device] = replica
+            return self._replicas[device]
+
+        chunks = TensorSplitter.split_tensor(hidden_states, len(self.devices), dim=0)
+        outputs: List[Tensor] = [None] * len(chunks)  # type: ignore[assignment]
+        errors: List[Exception] = []
+
+        def _run_shard(index: int, device: str, shard: Tensor) -> None:
+            try:
+                replica = _get_replica(device)
+                with torch.no_grad():
+                    result = replica(shard.to(device))
+                outputs[index] = result.to(hidden_states.device)
+            except Exception as exc:  # pragma: no cover - surfaced to caller
+                errors.append(exc)
+
+        threads = []
+        for index, (device, shard) in enumerate(zip(self.devices, chunks)):
+            thread = threading.Thread(target=_run_shard, args=(index, device, shard), daemon=True)
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+        if errors:
+            raise errors[0]
+
+        return TensorSplitter.gather_tensor(outputs, dim=0)
 
 
 class HybridParallelismEngine:
@@ -275,13 +323,31 @@ class HybridParallelismEngine:
     
     def __init__(
         self,
-        devices: Optional[List[str]] = None,
+        loader_or_devices: Optional[Any] = None,
+        nodes: Optional[List[Any]] = None,
         mode: ParallelismMode = ParallelismMode.PIPELINE_ONLY,
         config: Optional[TensorParallelConfig] = None,
+        tensor_parallel_size: Optional[int] = None,
+        devices: Optional[List[str]] = None,
     ):
-        self.devices = devices or self._detect_devices()
+        self.loader = None
+        self.nodes = nodes or []
+
+        if devices is not None:
+            self.devices = list(devices)
+        elif isinstance(loader_or_devices, list) and loader_or_devices and all(isinstance(item, str) for item in loader_or_devices):
+            self.devices = list(loader_or_devices)
+        else:
+            self.devices = self._detect_devices()
+
+        if loader_or_devices is not None and not (
+            isinstance(loader_or_devices, list) and loader_or_devices and all(isinstance(item, str) for item in loader_or_devices)
+        ):
+            self.loader = loader_or_devices
+
         self.mode = mode
         self.config = config or TensorParallelConfig(num_devices=len(self.devices))
+        self.tensor_parallel_size = max(1, int(tensor_parallel_size or self.config.num_devices or len(self.devices)))
         
         # Layer strategies
         self._strategies: List[ParallelismStrategy] = []
@@ -289,6 +355,14 @@ class HybridParallelismEngine:
         
         # Wrapped modules cache
         self._wrapped_modules: Dict[str, nn.Module] = {}
+
+        # Chunked runtime (used when initialised with a loader)
+        self._chunks: List[nn.Module] = []
+        self._chunk_mode: bool = False
+        self._primary_device = self.devices[0]
+        self._chunk_wrapped = False
+        if self.loader is not None:
+            self._build_chunked_runtime()
         
         # Statistics
         self._stats = ExecutionStats()
@@ -338,6 +412,58 @@ class HybridParallelismEngine:
         
         # Sort by priority
         self._strategies.sort(key=lambda s: s.priority, reverse=True)
+
+    def _build_chunked_runtime(self) -> None:
+        """Build an end-to-end chunked runtime from a HF loader.
+
+        This keeps the CLI path working and makes the engine usable without
+        manually passing a module per layer.
+        """
+        try:
+            from model.layer_chunker import LayerChunker
+        except Exception as exc:  # pragma: no cover - import safety
+            raise RuntimeError(f"Layer chunking unavailable: {exc}") from exc
+
+        if self.loader is None:
+            return
+
+        chunker = LayerChunker(self.loader)
+
+        # Prefer memory-aware partitioning if node capacities are available.
+        node_memory_mb = []
+        for node in self.nodes or []:
+            usable = getattr(node, "usable_memory_mb", None)
+            if usable is None:
+                gpu_vram = float(getattr(node, "gpu_vram_mb", 0.0) or 0.0)
+                ram_mb = float(getattr(node, "ram_mb", 0.0) or 0.0)
+                usable = gpu_vram if gpu_vram > 0 else ram_mb
+            node_memory_mb.append(float(usable or 0.0))
+
+        try:
+            if node_memory_mb and len(node_memory_mb) > 0:
+                self._chunks = chunker.create_chunks_by_memory(node_memory_mb)
+            else:
+                self._chunks = chunker.create_chunks(max(1, self.tensor_parallel_size))
+        except Exception:
+            self._chunks = chunker.create_chunks(max(1, self.tensor_parallel_size))
+
+        self._chunk_mode = True
+        self._wrap_chunk_layers()
+
+    def _wrap_chunk_layers(self) -> None:
+        """Wrap layers inside each chunk according to the current strategy."""
+        if self._chunk_wrapped:
+            return
+        for chunk in self._chunks:
+            if not hasattr(chunk, "layers"):
+                continue
+            for layer_name, module in list(chunk.layers.items()):
+                wrapped = self.wrap_module(module, layer_name)
+                if wrapped is not module:
+                    chunk.layers[layer_name] = wrapped
+            chunk.to(self._primary_device)
+            chunk.eval()
+        self._chunk_wrapped = True
     
     def set_mode(self, mode: ParallelismMode) -> None:
         """Set global parallelism mode."""
@@ -394,8 +520,8 @@ class HybridParallelismEngine:
     
     def forward(
         self,
-        module: nn.Module,
-        inputs: Tensor,
+        module: Optional[nn.Module] = None,
+        inputs: Optional[Tensor] = None,
         layer_name: str = "",
         **kwargs,
     ) -> Tensor:
@@ -417,6 +543,24 @@ class HybridParallelismEngine:
         """
         import time
         start_time = time.perf_counter()
+
+        # Chunked end-to-end mode: used by kai_cli.py and test fixtures that
+        # construct the engine from a loader + cluster nodes.
+        if self._chunk_mode:
+            if inputs is None and module is not None and isinstance(module, torch.Tensor):
+                inputs = module
+                module = None
+            if inputs is None:
+                raise ValueError("inputs tensor is required for chunked forward")
+            output = self._forward_chunked(inputs)
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            with self._lock:
+                self._stats.total_time_ms += elapsed_ms
+                self._stats.mode_used = self.mode
+            return output
+
+        if module is None or inputs is None:
+            raise ValueError("module and inputs are required for module-level forward")
         
         strategy = self.get_strategy_for_layer(layer_name)
         
@@ -434,6 +578,17 @@ class HybridParallelismEngine:
             self._stats.mode_used = strategy.mode
         
         return output
+
+    def _forward_chunked(self, inputs: Tensor) -> Tensor:
+        """Forward through chunked runtime built from a loader."""
+        if not self._chunks:
+            raise RuntimeError("Chunked runtime is not initialised")
+
+        x = inputs.to(self._primary_device)
+        with torch.no_grad():
+            for chunk in self._chunks:
+                x = chunk(x)
+        return x
     
     def _forward_pipeline(
         self,
@@ -487,6 +642,8 @@ class HybridParallelismEngine:
                 "mode_used": self._stats.mode_used.value,
                 "num_devices": len(self.devices),
                 "devices": self.devices,
+                "chunk_mode": self._chunk_mode,
+                "num_chunks": len(self._chunks),
             }
     
     def reset_stats(self) -> None:
@@ -508,7 +665,7 @@ class WorkloadAnalyzer:
     
     def __init__(
         self,
-        model: nn.Module,
+        model: Optional[nn.Module] = None,
         sample_input: Optional[Tensor] = None,
     ):
         self.model = model
@@ -547,10 +704,26 @@ class WorkloadAnalyzer:
         self._layer_profiles = profiles
         return profiles
     
-    def recommend_mode(self) -> Tuple[ParallelismMode, str]:
-        """Recommend parallelism mode based on model characteristics."""
+    def recommend_mode(
+        self,
+        model: Optional[nn.Module] = None,
+        nodes: Optional[List[Any]] = None,
+    ) -> Tuple[ParallelismMode, str]:
+        """Recommend parallelism mode based on model characteristics.
+
+        The method accepts optional ``model`` and ``nodes`` arguments to stay
+        compatible with older call sites and tests.
+        """
+        if model is not None:
+            self.model = model
+
+        if self.model is None:
+            return ParallelismMode.PIPELINE_ONLY, "No model provided"
+
         if not self._layer_profiles:
             self.profile_layers()
+
+        node_count = len(nodes) if nodes else 0
         
         attention_params = sum(
             p["param_count"]
@@ -571,12 +744,13 @@ class WorkloadAnalyzer:
         
         attention_ratio = attention_params / total_params if total_params > 0 else 0
         
+        if node_count >= 2 and attention_ratio > 0.4:
+            return ParallelismMode.HYBRID, f"Multi-node workload ({attention_ratio:.1%} attention, {node_count} nodes)"
         if attention_ratio > 0.6:
             return ParallelismMode.TENSOR_ONLY, f"High attention ratio ({attention_ratio:.1%})"
-        elif attention_ratio > 0.3:
+        if attention_ratio > 0.3:
             return ParallelismMode.HYBRID, f"Mixed workload ({attention_ratio:.1%} attention)"
-        else:
-            return ParallelismMode.PIPELINE_ONLY, f"FFN-dominant workload"
+        return ParallelismMode.PIPELINE_ONLY, "FFN-dominant workload"
 
 
 # Register as plugins
