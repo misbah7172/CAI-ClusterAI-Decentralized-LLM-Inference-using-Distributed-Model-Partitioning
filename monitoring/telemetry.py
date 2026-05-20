@@ -38,6 +38,8 @@ class InferenceMetrics:
     start_time: float
     end_time: Optional[float] = None
     total_duration_ms: Optional[float] = None
+    ttft_ms: Optional[float] = None
+    ptgt_ms: Optional[float] = None
     chunk_count: int = 0
     total_tokens: int = 0
     tokens_per_second: Optional[float] = None

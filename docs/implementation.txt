@@ -1,0 +1,100 @@
+\section{Implementation}
+\label{sec:implementation}
+This section describes the concrete implementation of KAI as it exists in the current codebase. All mechanisms below are directly supported by modules, CLI entry points, or dashboards in this repository.
+
+\subsection{Software Stack}
+KAI is implemented in Python and uses the following core libraries and services:
+\begin{itemize}
+    \item \textbf{PyTorch}: model execution, quantization utilities, and tensor operations.
+    \item \textbf{Hugging Face Transformers}: model loading and tokenizer support.
+    \item \textbf{gRPC}: chunk worker inference service for distributed execution.
+    \item \textbf{Kubernetes}: multi-node orchestration and deployment workflow.
+    \item \textbf{Streamlit + Plotly}: dashboards for telemetry, inference, and benchmarking.
+    \item \textbf{Optional dependencies}: bitsandbytes (4/8-bit quantization), onnx + onnxruntime (ONNX export and inference), safetensors (disk-tier offload).
+\end{itemize}
+
+\subsection{Core Runtime Components}
+\textbf{Model Loading and Introspection.} The Hugging Face loader identifies the layer structure and metadata needed to determine how to divide and plan a model .
+
+\textbf{Layer Chunking.} The layer chunker splits a model into sequential chunks with deterministic embedding and LM-head Placement. Each chunk is a module that may be run sequentially or hosted by a chunk worker. Each chunk is a module that can be executed sequentially or hosted by a chunk worker .
+
+\textbf{Auto Partitioning.} The auto partitioner assigns layers to nodes according to node resource profiles (VRAM/RAM) .
+
+\textbf{Distributed Generation.} The distributed generator runs an autoregressive loop over ordered chunks with sampling controls (temperature, top-k, top-p, repetition penalty) .
+
+\textbf{Chunk Worker Service.} The gRPC chunk server hosts a single chunk and exposes inference, health, pause, and checkpoint endpoints .
+
+\subsection{Offloading and Memory Management}
+\textbf{Tiered Weight Manager.} The tiered manager stores weights across GPU VRAM , system ram , and disk ( safetensors ) to allow execution of oversized models .
+
+\textbf{Prefetch Engine.} A double-buffered prefetcher overlaps weight transfer with GPU computation . 
+
+\textbf{Layer Streaming.} The layer streamer loads, computes, and evicts model layers in batches to minimize GPU memory footprint .
+
+\textbf{OOM Guardian.} The OOM guardian monitors memory pressure and triggers corrective actions (batch reduction, offload, precision downgrade) .
+
+\subsection{KV Cache Optimization}
+\textbf{Mixed Precision KV Cache.} Recent tokens are stored in FP16 while older tokens are compressed to INT8/INT4, with eviction policies and memory tracking .
+
+\textbf{Prompt Reuse.} A cache reuser hashes prompt prefixes and reuses cached KV states when overlap is detected.
+
+\subsection{Parallelism and Placement}
+\textbf{Hybrid Parallelism Engine.} The hybrid engine combines pipeline execution and tensor-parallel execution for attention-heavy layers. It supports a loader-based chunked runtime and module-level execution.
+
+\textbf{Intelligent Placement.} The placement engine computes layer-to-node assignments under latency, energy, memory, or balanced objectives and accounts for network topology.
+
+\subsection{Scheduling and Control}
+\textbf{DEAS (Dynamic Energy-Aware Scheduler).} DEAS will trigger migration plans based on energy efficiency and performance degradation signals. It supports multi-chunk top-k plans and integrates with the energy feedback loop .
+
+\textbf{Network-Aware Scheduling.} The network-aware scheduler extends DEAS with real-time link monitoring and topology-aware placement.
+
+\textbf{ADSA Scheduler.} ADSA is a dynamic task ordering mechanism with multiple policies (FIFO, SJF, SRPT, adaptive) .
+
+DFS and ILP Schedulers. The DFS scheduler explores the assignment space with pruning; the ILP scheduler uses PuLP with heuristic fallbacks .
+
+Energy Feedback Control Loop. A closed-loop controller monitors power, latency, throughput, and memory pressure, and applies control actions (batch size, precision, power limits, offloading) .
+
+\subsection{Mathematical Formulation}
+The implementation uses the following project-defined equations for telemetry aggregation, normalization, and scheduling decisions.
+
+Energy Efficiency Ratio (EER).
+$$\text{EER} = \frac{\text{Throughput (tokens/sec)}}{\text{Power (Watts)}}$$
+
+Fairness Index (Jain's Index).
+$$J(x_1, x_2, ..., x_n) = \frac{(\sum_{i=1}^{n} x_i)^2}{n \cdot \sum_{i=1}^{n} x_i^2}$$
+
+Normalization.
+$$P_{normalized} = \frac{P_{sampled} - P_{idle}}{TDP - P_{idle}} \quad \in [0, 1]$$
+$$L_{scaled} = \frac{L_{measured} - L_{min}}{L_{max} - L_{min}} \quad \in [0, 1]$$
+$$T_{normalized} = \frac{\text{tokens/sec}}{\text{model\_max\_throughput}} \quad \in [0, 1]$$
+
+FCIM worker scoring.
+$$Score(w, t) = \alpha \cdot \frac{\text{CostEff}(w, t)}{\max_w \text{CostEff}} + \beta \cdot \frac{\text{PerfEff}(w, t)}{\max_w \text{PerfEff}} + \gamma \cdot (1 - \text{Util}(w))$$
+
+ILP placement objective.
+$$\text{Minimize: } \sum_{i,j} c_{ij} \times x_{ij}$$
+Subject to:
+$$\sum_j x_{ij} = 1, \forall i$$
+$$\sum_i m_i \times x_{ij} \leq M_j, \forall j$$
+$$\sum_i f_i \times x_{ij} \leq F_j, \forall j$$
+$$x_{ij} \in \{0, 1\}$$
+
+Energy integration.
+$$energy\_consumed = \int power(t)\, dt$$
+
+\subsection{Speculative Decoding}
+A draft model generates candidate tokens which are verified by the main model. The adaptive decoder adjusts speculation length based on acceptance rate .
+
+\subsection{Batch Processing}
+The batch processor supports fixed-size, fixed-time, adaptive, and continuous batching. The adaptive batch controller adjusts batch size using observed latency and memory pressure .
+
+\subsection{Telemetry and Benchmarking}
+\textbf{Telemetry Collector.} The telemetry system captures routing decisions, latency samples, and inference metrics for dashboards and analysis .
+
+\textbf{Energy Benchmarking Dashboards.} Streamlit dashboards visualize throughput, latency, and energy metrics, and export CSV/JSON logs for analysis .
+
+\subsection{ONNX Export and Simulation}
+\textbf{ONNX Converter.} PyTorch models can be exported to ONNX with optional optimization and quantization .
+
+\textbf{Simulation Optimizer.} The simulator reduces the cost of experimentation using layer simplification and decode approximation .
+

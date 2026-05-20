@@ -1345,6 +1345,7 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
             return torch.multinomial(probs, num_samples=1)
 
         start_time = time.time()
+        first_token_time: Optional[float] = None
         used_low_level_kv = False
         prompt_past_for_cache = None
         allow_low_level_kv = bool(use_kv_cache and not baseline_mode and not offload_enabled)
@@ -1383,6 +1384,8 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
                         step_out = model(input_ids=current_input, past_key_values=past, use_cache=True)
                         past = step_out.past_key_values
                         next_token = _sample_next_token(step_out.logits[:, -1, :])
+                        if first_token_time is None:
+                            first_token_time = time.time()
                         generated_token_ids.append(next_token)
                         current_input = next_token
 
@@ -1419,11 +1422,22 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
                     stopping_criteria=StoppingCriteriaList([StopOnEventCriteria(stop_event)]),
                 )
 
-        generation_time = time.time() - start_time
+        end_time = time.time()
+        generation_time = end_time - start_time
         # Normalize outputs shape regardless of branch.
         output_ids = outputs if isinstance(outputs, torch.Tensor) else outputs[0]
         output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
         generated_tokens = max(int(output_ids[0].shape[0] - input_ids.shape[1]), 0)
+        ttft_ms = (
+            (first_token_time - start_time) * 1000.0
+            if first_token_time is not None
+            else None
+        )
+        ptgt_ms = (
+            ((end_time - first_token_time) / generated_tokens) * 1000.0
+            if first_token_time is not None and generated_tokens > 0
+            else None
+        )
 
         result_queue.put(
             {
@@ -1435,6 +1449,8 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
                     "duration_sec": generation_time,
                     "tokens_generated": generated_tokens,
                     "tokens_per_sec": generated_tokens / (generation_time + 0.001),
+                    "ttft_ms": ttft_ms,
+                    "ptgt_ms": ptgt_ms,
                     "device": device_to_use,
                     "model_cache_hit": cache_hit,
                     "kv_cache_enabled": use_kv_cache,
@@ -1741,6 +1757,16 @@ def page_live_inference():
                         "tokens_generated": int(run_metrics.get("tokens_generated", 0) or 0),
                         "tokens_per_sec": float(run_metrics.get("tokens_per_sec", 0.0) or 0.0),
                         "duration_sec": float(run_metrics.get("duration_sec", 0.0) or 0.0),
+                        "ttft_ms": (
+                            float(run_metrics.get("ttft_ms"))
+                            if run_metrics.get("ttft_ms") is not None
+                            else None
+                        ),
+                        "ptgt_ms": (
+                            float(run_metrics.get("ptgt_ms"))
+                            if run_metrics.get("ptgt_ms") is not None
+                            else None
+                        ),
                         "device": run_metrics.get("device", "N/A"),
                         "model_cache_hit": bool(run_metrics.get("model_cache_hit", False)),
                         "kv_cache_enabled": bool(run_metrics.get("kv_cache_enabled", False)),
@@ -1813,6 +1839,16 @@ def page_live_inference():
                         "tokens_generated": int(run_metrics.get("tokens_generated", 0) or 0),
                         "tokens_per_sec": float(run_metrics.get("tokens_per_sec", 0.0) or 0.0),
                         "duration_sec": float(run_metrics.get("duration_sec", 0.0) or 0.0),
+                        "ttft_ms": (
+                            float(run_metrics.get("ttft_ms"))
+                            if run_metrics.get("ttft_ms") is not None
+                            else None
+                        ),
+                        "ptgt_ms": (
+                            float(run_metrics.get("ptgt_ms"))
+                            if run_metrics.get("ptgt_ms") is not None
+                            else None
+                        ),
                         "device": run_metrics.get("device", "N/A"),
                         "model_cache_hit": bool(run_metrics.get("model_cache_hit", False)),
                         "kv_cache_enabled": bool(run_metrics.get("kv_cache_enabled", False)),

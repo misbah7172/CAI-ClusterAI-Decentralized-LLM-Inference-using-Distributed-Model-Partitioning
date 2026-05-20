@@ -30,6 +30,7 @@ Usage::
 """
 
 import logging
+import time
 from typing import Dict, Generator, List, Optional
 
 import torch
@@ -76,6 +77,10 @@ class DistributedGenerator:
             chunk.eval()
 
         self._eos_token_id = tokenizer.eos_token_id
+        self.last_ttft_ms: Optional[float] = None
+        self.last_ptgt_ms: Optional[float] = None
+        self.last_generation_time_s: Optional[float] = None
+        self.last_generated_tokens: int = 0
 
     def generate(
         self,
@@ -141,6 +146,9 @@ class DistributedGenerator:
         str
             Each decoded token as it is generated.
         """
+        start_time = time.time()
+        first_token_time: Optional[float] = None
+        generated_tokens = 0
         # Tokenize input
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
         generated_ids = input_ids.clone()
@@ -181,6 +189,10 @@ class DistributedGenerator:
                 [generated_ids, next_token_id.unsqueeze(0)], dim=1
             )
 
+            if first_token_time is None:
+                first_token_time = time.time()
+            generated_tokens += 1
+
             # Decode the new token
             token_text = self.tokenizer.decode(
                 next_token_id, skip_special_tokens=True
@@ -194,7 +206,15 @@ class DistributedGenerator:
                     if stop in generated_text:
                         logger.info("Stop string '%s' found at step %d", stop, step)
                         return
-
+        end_time = time.time()
+        self.last_generation_time_s = end_time - start_time
+        self.last_generated_tokens = generated_tokens
+        if first_token_time is None or generated_tokens == 0:
+            self.last_ttft_ms = None
+            self.last_ptgt_ms = None
+        else:
+            self.last_ttft_ms = (first_token_time - start_time) * 1000.0
+            self.last_ptgt_ms = ((end_time - first_token_time) / generated_tokens) * 1000.0
         logger.info(
             "Generation complete: %d tokens total",
             generated_ids.shape[1],

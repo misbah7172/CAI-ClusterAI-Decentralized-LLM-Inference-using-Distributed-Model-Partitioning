@@ -1,0 +1,73 @@
+\section{Methodology}
+
+This section outlines the research methodology used to design, implement, and evaluate KAI. The workflow follows a systematic pipeline from problem formulation, to system architecture and algorithm design, to implementation, measurement, and validation. All statements below reflect capabilities that are present in the current codebase and execution stack.
+
+\subsection{Problem Formulation}
+Commodity hardware can no longer host large language models locally due to memory limits, compute constraints, and unstable inference throughput. Existing approaches often rely on expensive cloud GPUs or aggressive compression that can harm quality, and they do not adapt well to heterogeneous edge or lab clusters. KAI addresses this by providing a distributed inference framework that optimizes three primary objectives: (i) memory feasibility at the node level, (ii) low latency and stable throughput, and (iii) energy efficiency and fairness across workers. The core research question is how to maintain acceptable response quality while minimizing energy cost and meeting latency targets on heterogeneous, low-cost nodes.
+
+\subsection{System Model and Architecture}
+KAI is structured as a two-plane system: a \textbf{Control Plane} and an \textbf{Execution Plane}. The control plane hosts the gateway, schedulers, telemetry monitor, and adaptive controllers. The execution plane runs distributed chunk workers, each of which hosts a contiguous segment of the model layers. The framework is further modularized into functional components, including the Model Partitioner, Scheduling Engines (DEAS, network-aware scheduling, ADSA, DFS/ILP schedulers), Placement Engine, KV Cache Optimizer, Hybrid Parallelism Engine, and Closed-Loop Energy Feedback Controller. A plugin architecture allows schedulers, optimizers, placement strategies, and cache subsystems to be replaced without changing the core runtime.
+
+\begin{figure*}[!t]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig2_2.png}
+  \caption{Layered Architecture of the Proposed KAI Framework with Adaptive Workload Partitioning, Hybrid Parallelism, KV Cache Optimization, and Closed-Loop Energy Feedback Control.}
+  \label{fig2_2:System_architecture}
+\end{figure*}
+
+\subsection{Data Description}
+The study uses three primary sources of data: (i) public Hugging Face models used for inference testing, (ii) benchmark prompts and controlled workloads (short and long prompts with fixed generation limits), and (iii) real-time telemetry captured during runs. Telemetry includes GPU power, utilization, memory usage, throughput, latency, and queue depth. For energy reporting, GPU power samples are integrated over time using trapezoidal integration to yield energy per run and energy per token. Results are stored as structured JSON and CSV logs for later analysis.
+
+\subsection{Data Preprocessing}
+Telemetry and run logs are processed with the following steps:
+\begin{itemize}
+  \item \textbf{Cleaning}: Remove incomplete telemetry windows, failed runs, and out-of-order timestamps.
+  \item \textbf{Normalization}: Normalize latency and throughput to comparable scales; scale power consumption relative to device capacity (TDP) where available.
+  \item \textbf{Feature Engineering}: Derive energy efficiency (tokens per Wh), energy-per-token, EER-like ratios, fairness indicators (Jain's index on worker allocation), and bottleneck flags (queue pressure, memory pressure).
+  \item \textbf{Data Splitting}: Use workload-based and time-based splits when training or validating adaptive policies; hold out unseen prompts for evaluation.
+\end{itemize}
+
+
+\subsection{Proposed Method}
+The proposed method combines partitioning, scheduling, and adaptive control in a single closed loop:
+\begin{enumerate}
+  \item \textbf{Workload profiling}: Extract prompt length, expected token budget, and device constraints.
+  \item \textbf{Partitioning and placement}: Use layer-wise chunking and auto-partitioning to map model layers to nodes based on memory capacity; optionally refine placement with the intelligent placement engine and network-aware constraints.
+  \item \textbf{Scheduling and selection}: Select workers using FCIM and ADSA policies; optionally run DFS or ILP-based schedulers when the problem size allows; apply network-aware adjustments to reduce inter-node transfer penalties.
+  \item \textbf{Execution}: Perform distributed inference using chunk workers, optionally with hybrid parallelism for attention-heavy layers, and use KV cache optimization and speculative decoding to reduce redundant computation.
+  \item \textbf{Adaptive control}: Apply energy feedback control to adjust batch size, precision, and offloading; invoke DEAS to trigger rebalancing when inefficiency or critical thresholds are detected.
+  \item \textbf{Telemetry loop}: Continuously log power, latency, throughput, and memory pressure; update policy parameters and caching state for subsequent requests.
+\end{enumerate}
+
+\subsection{Baseline Methods}
+We evaluate against three baselines:
+\begin{itemize}
+  \item \textbf{Single GPU inference}: Standard local inference on one GPU without distribution or adaptive scheduling.
+  \item \textbf{Optimized single-node runtime}: Local inference with caching, offloading, and optimized batch sizing but without distributed scheduling.
+  \item \textbf{Distributed without advanced controls}: Multi-node execution without DEAS, network-aware scheduling, or energy feedback control.
+\end{itemize}
+
+\subsection{Implementation and Experimental Setup}
+KAI is implemented in Python with PyTorch, gRPC, and Kubernetes. Experiments are executed in three modes: local (single node), Kubernetes (multi-node), and combined comparison. Each run includes warmup iterations, a fixed batch size, and controlled sampling parameters (temperature, top-k, top-p) to ensure consistent comparisons. The CLI and dashboard provide standardized entry points for partitioning, benchmarking, auto-tuning, speculative decoding, hybrid parallelism, placement planning, energy-loop control, and fault-tolerant execution.
+
+\subsection{Evaluation Metrics}
+Performance and efficiency are measured using:
+\begin{itemize}
+  \item \textbf{Latency}: Time-To-First-Token (TTFT) and Per-Token Generation Time (PTGT).
+  \item \textbf{Throughput}: Tokens per second (TPS).
+  \item \textbf{Energy}: Total energy (Wh), energy per token, and energy efficiency (tokens per Wh).
+  \item \textbf{Fairness}: Jain's fairness index across worker allocations.
+  \item \textbf{Stability}: Variance in latency and throughput over time.
+  \item \textbf{Cost}: Estimated cost per inference when energy and resource costs are available.
+  \item \textbf{Output Consistency}: Consistency checks under fixed sampling settings to ensure optimizations do not destabilize outputs.
+\end{itemize}
+
+\subsection{Validation Strategy}
+Validation is performed with holdout prompts and cross-scenario testing across local and Kubernetes modes. We evaluate configuration robustness under both light and stress workloads. Auto-tuning runs sweep configuration spaces (partitioning, precision, offloading, batch size, parallelism mode), and the best configuration is validated on unseen prompts. Where exhaustive search is costly, heuristic or Bayesian-style exploration is used to refine promising configurations.
+
+\subsection{Workflow / Pipeline}
+The end-to-end pipeline is: input request \rightarrow prompt tokenization \rightarrow workload profiling \rightarrow partitioning and placement \rightarrow scheduling and worker selection \rightarrow distributed forward pass \rightarrow response aggregation \rightarrow telemetry logging \rightarrow adaptive control update. This loop repeats for each request, and controller adjustments are applied when the system detects inefficiency or instability.
+
+
+\subsection{Assumptions and Limitations}
+We assume node profiling correctly reflects hardware performance and that measured network costs approximate real transfer costs. Results can vary due to heterogeneous hardware, network congestion, or telemetry sampling resolution. Offloading and quantization may introduce latency or accuracy trade-offs depending on the model and device. Multi-node coordination adds overhead that can reduce gains in small clusters. While the fault-tolerant pipeline mitigates failures, it does not guarantee zero downtime under extreme network or storage faults. Finally, energy measurements reflect GPU-side telemetry and may not capture total system power on all platforms.
