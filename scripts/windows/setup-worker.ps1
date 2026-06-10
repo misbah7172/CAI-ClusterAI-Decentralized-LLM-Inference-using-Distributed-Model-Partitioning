@@ -12,7 +12,15 @@ param(
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $scriptDir 'common.ps1')
 
-Ensure-KaiAdministrator -ScriptPath $PSCommandPath -RemainingArgs @('-ServerUrl', $ServerUrl, '-Token', $Token, '-TokenFile', $TokenFile, '-Distro', $Distro, '-RepoUrl', $RepoUrl, '-Workspace', $Workspace)
+$adminArgs = @('-ServerUrl', $ServerUrl, '-Distro', $Distro, '-RepoUrl', $RepoUrl, '-Workspace', $Workspace)
+if (-not [string]::IsNullOrWhiteSpace($Token)) {
+    $adminArgs += @('-Token', $Token)
+}
+if (-not [string]::IsNullOrWhiteSpace($TokenFile)) {
+    $adminArgs += @('-TokenFile', $TokenFile)
+}
+
+Ensure-KaiAdministrator -ScriptPath $PSCommandPath -RemainingArgs $adminArgs
 Ensure-KaiWslAndDistro -Distro $Distro
 
 if ([string]::IsNullOrWhiteSpace($Token) -and -not [string]::IsNullOrWhiteSpace($TokenFile)) {
