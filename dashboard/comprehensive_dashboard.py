@@ -1498,6 +1498,7 @@ page = st.sidebar.radio(
     [
         "Home",
         "Live Inference",
+        "Multi-Node Cluster",
         "Performance Monitor",
         "KV Cache Analytics",
         "Routing Telemetry",
@@ -3156,7 +3157,249 @@ def page_comparisons_benchmarks():
             st.warning("No real data available. Run a model first to see network optimization.")
 
 # ============================================================================
-# Page 7: SYSTEM CONFIG
+# Page 7: MULTI-NODE CLUSTER
+# ============================================================================
+
+def _kubectl_json(args: List[str], timeout: int = 15) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Run kubectl against the WSL K3s cluster and return parsed JSON."""
+    commands: List[List[str]] = []
+    custom = os.environ.get("KAI_KUBECTL_COMMAND", "").strip()
+    if custom:
+        commands.append(custom.split() + args + ["-o", "json"])
+
+    if os.name == "nt":
+        distro = os.environ.get("KAI_WSL_DISTRO", "Ubuntu-22.04")
+        commands.append(["wsl", "-d", distro, "--", "sudo", "k3s", "kubectl", *args, "-o", "json"])
+
+    commands.append(["kubectl", *args, "-o", "json"])
+
+    errors: List[str] = []
+    for command in commands:
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
+            if result.returncode == 0 and result.stdout.strip():
+                return json.loads(result.stdout), None
+            errors.append(f"{' '.join(command)} -> {(result.stderr or result.stdout or 'empty output').strip()}")
+        except Exception as exc:
+            errors.append(f"{' '.join(command)} -> {exc}")
+    return None, "\n".join(errors[-3:])
+
+
+def _memory_to_gib(memory_value: str) -> float:
+    """Convert Kubernetes memory strings to GiB for display."""
+    text = str(memory_value or "").strip()
+    try:
+        if text.endswith("Ki"):
+            return float(text[:-2]) / (1024.0 ** 2)
+        if text.endswith("Mi"):
+            return float(text[:-2]) / 1024.0
+        if text.endswith("Gi"):
+            return float(text[:-2])
+        return float(text) / (1024.0 ** 3) if text else 0.0
+    except Exception:
+        return 0.0
+
+
+def _node_role(labels: Dict[str, str]) -> str:
+    if "node-role.kubernetes.io/control-plane" in labels:
+        return "control-plane"
+    if "node-role.kubernetes.io/master" in labels:
+        return "master"
+    return "worker"
+
+
+def _pod_ready_text(status: Dict[str, Any]) -> str:
+    containers = status.get("containerStatuses", []) or []
+    if not containers:
+        return "0/0"
+    ready = sum(1 for container in containers if container.get("ready"))
+    return f"{ready}/{len(containers)}"
+
+
+def _pod_restart_count(status: Dict[str, Any]) -> int:
+    return int(sum(int(c.get("restartCount", 0) or 0) for c in status.get("containerStatuses", []) or []))
+
+
+def _parse_k8s_time(value: str) -> Optional[datetime]:
+    """Parse Kubernetes RFC3339 timestamps into timezone-aware datetimes."""
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def _age_text(value: str) -> str:
+    """Return a compact age string for a Kubernetes timestamp."""
+    parsed = _parse_k8s_time(value)
+    if parsed is None:
+        return "N/A"
+    age_seconds = max(0.0, (datetime.now(parsed.tzinfo) - parsed).total_seconds())
+    if age_seconds < 60:
+        return f"{age_seconds:.0f}s ago"
+    if age_seconds < 3600:
+        return f"{age_seconds / 60.0:.1f}m ago"
+    return f"{age_seconds / 3600.0:.1f}h ago"
+
+
+def load_live_cluster_status() -> Dict[str, Any]:
+    """Load live node and pod status from the active K3s cluster."""
+    queried_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    nodes_json, node_error = _kubectl_json(["get", "nodes"])
+    pods_json, pod_error = _kubectl_json(["get", "pods", "-A"])
+    if node_error:
+        return {"available": False, "error": node_error, "nodes": [], "pods": [], "plugin_pods": [], "queried_at": queried_at}
+
+    pods = (pods_json or {}).get("items", [])
+    plugin_by_node: Dict[str, Dict[str, Any]] = {}
+    kai_pods: List[Dict[str, Any]] = []
+    for pod in pods:
+        metadata = pod.get("metadata", {}) or {}
+        spec = pod.get("spec", {}) or {}
+        status = pod.get("status", {}) or {}
+        labels = metadata.get("labels", {}) or {}
+        name = metadata.get("name", "")
+        namespace = metadata.get("namespace", "")
+        node_name = spec.get("nodeName", "")
+        row = {
+            "Namespace": namespace,
+            "Pod": name,
+            "Node": node_name,
+            "Phase": status.get("phase", "Unknown"),
+            "Ready": _pod_ready_text(status),
+            "Restarts": _pod_restart_count(status),
+        }
+        if labels.get("name") == "nvidia-device-plugin-ds" or "nvidia-device-plugin" in name:
+            plugin_by_node[node_name] = row
+        if namespace == "kai" or labels.get("app") == "kai":
+            kai_pods.append(row)
+
+    node_rows: List[Dict[str, Any]] = []
+    for node in (nodes_json or {}).get("items", []):
+        metadata = node.get("metadata", {}) or {}
+        status = node.get("status", {}) or {}
+        labels = metadata.get("labels", {}) or {}
+        capacity = status.get("capacity", {}) or {}
+        allocatable = status.get("allocatable", {}) or {}
+        conditions = {condition.get("type"): condition for condition in status.get("conditions", []) or []}
+        ready = conditions.get("Ready", {}) or {}
+        last_heartbeat = ready.get("lastHeartbeatTime", "")
+        last_transition = ready.get("lastTransitionTime", "")
+        addresses = {address.get("type"): address.get("address") for address in status.get("addresses", []) or []}
+        node_name = metadata.get("name", "")
+        plugin = plugin_by_node.get(node_name, {})
+        gpu_count = capacity.get("nvidia.com/gpu", allocatable.get("nvidia.com/gpu", "0"))
+        node_rows.append({
+            "Node": node_name,
+            "Ready": ready.get("status", "Unknown"),
+            "Reason": ready.get("reason", ""),
+            "Heartbeat Age": _age_text(last_heartbeat),
+            "Last Heartbeat": last_heartbeat,
+            "Last Transition": last_transition,
+            "Role": _node_role(labels),
+            "Internal IP": addresses.get("InternalIP", ""),
+            "CPU": capacity.get("cpu", ""),
+            "Memory GiB": round(_memory_to_gib(capacity.get("memory", "")), 2),
+            "GPU Count": str(gpu_count),
+            "GPU Product": labels.get("nvidia.com/gpu.product", labels.get("accelerator", "")),
+            "NVIDIA Plugin": plugin.get("Phase", "Not scheduled"),
+            "Plugin Ready": plugin.get("Ready", ""),
+            "Kubelet": status.get("nodeInfo", {}).get("kubeletVersion", ""),
+        })
+
+    return {
+        "available": True,
+        "error": pod_error,
+        "nodes": node_rows,
+        "pods": kai_pods,
+        "plugin_pods": list(plugin_by_node.values()),
+        "queried_at": queried_at,
+    }
+
+
+def page_multi_node_cluster():
+    st.title(" Multi-Node Cluster")
+    st.markdown("Live view of K3s workers, readiness, GPU registration, and KAI pods.")
+
+    refresh_col, auto_col, note_col = st.columns([1, 1, 2])
+    with refresh_col:
+        if st.button("Refresh Cluster", width="stretch", key="refresh_live_cluster"):
+            st.rerun()
+    with auto_col:
+        auto_refresh = st.checkbox("Auto-refresh", value=False, key="live_cluster_auto_refresh")
+    with note_col:
+        st.caption("Reads live WSL K3s data on every render using `wsl -d Ubuntu-22.04 -- sudo k3s kubectl`.")
+
+    cluster_status = load_live_cluster_status()
+    if not cluster_status.get("available"):
+        st.error("K3s cluster status is unavailable.")
+        st.code(cluster_status.get("error", "Unknown error"), language="text")
+        return
+
+    st.caption(f"Last live query: {cluster_status.get('queried_at', 'N/A')} | Data source: Kubernetes API via kubectl, no mock data and no dashboard cache.")
+
+    nodes = cluster_status.get("nodes", [])
+    node_count = len(nodes)
+    ready_count = sum(1 for node in nodes if node.get("Ready") == "True")
+    worker_count = sum(1 for node in nodes if node.get("Role") == "worker")
+    gpu_nodes = sum(1 for node in nodes if str(node.get("GPU Count", "0")) not in ("", "0", "None"))
+
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.metric("Nodes", node_count, delta=f"{ready_count} Ready")
+    with m2:
+        st.metric("Workers", worker_count)
+    with m3:
+        st.metric("GPU Nodes", gpu_nodes)
+    with m4:
+        st.metric("Cluster State", "Ready" if node_count and ready_count == node_count else "Degraded")
+
+    if node_count and ready_count != node_count:
+        st.warning("One or more nodes are not Ready. KAI multi-node workloads should wait until required workers are Ready.")
+        st.info("Kubernetes keeps disconnected workers in the node list as `Unknown` or `NotReady` until the node is deleted; the Heartbeat Age column shows whether the node is stale.")
+    if gpu_nodes == 0:
+        st.warning("No Kubernetes node currently advertises `nvidia.com/gpu`; GPU chunk pods will stay pending.")
+
+    st.subheader("Worker / Node List")
+    if nodes:
+        st.dataframe(pd.DataFrame(nodes), width="stretch", hide_index=True)
+    else:
+        st.info("No Kubernetes nodes found.")
+
+    st.subheader("NVIDIA Device Plugin Pods")
+    plugin_pods = cluster_status.get("plugin_pods", [])
+    if plugin_pods:
+        st.dataframe(pd.DataFrame(plugin_pods), width="stretch", hide_index=True)
+    else:
+        st.info("NVIDIA device plugin is not scheduled.")
+
+    st.subheader("KAI Workload Pods")
+    kai_pods = cluster_status.get("pods", [])
+    if kai_pods:
+        st.dataframe(pd.DataFrame(kai_pods), width="stretch", hide_index=True)
+    else:
+        st.info("No KAI workload pods are deployed yet.")
+
+    with st.expander("Troubleshooting Commands"):
+        st.code(
+            "\n".join([
+                "wsl -d Ubuntu-22.04 -- sudo k3s kubectl get nodes -o wide",
+                "wsl -d Ubuntu-22.04 -- sudo k3s kubectl describe node axeon",
+                "wsl -d Ubuntu-22.04 -- sudo k3s kubectl get pods -A -o wide",
+                "wsl -d Ubuntu-22.04 -- sudo k3s kubectl describe nodes | findstr /i \"nvidia.com/gpu\"",
+            ]),
+            language="powershell",
+        )
+
+    if auto_refresh:
+        time.sleep(3)
+        st.session_state.pop("live_cluster_status", None)
+        st.rerun()
+
+
+# ============================================================================
+# Page 8: SYSTEM CONFIG
 # ============================================================================
 
 def page_system_config():
@@ -3404,6 +3647,8 @@ def main():
         page_home()
     elif page == "Live Inference":
         page_live_inference()
+    elif page == "Multi-Node Cluster":
+        page_multi_node_cluster()
     elif page == "Performance Monitor":
         page_performance_monitor()
     elif page == "KV Cache Analytics":

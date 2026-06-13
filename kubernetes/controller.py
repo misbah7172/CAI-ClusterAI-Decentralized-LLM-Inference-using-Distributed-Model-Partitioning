@@ -16,9 +16,10 @@ Functions:
 
 Usage::
 
-    python -m kubernetes.controller deploy --num-chunks 3 --model transformer
-    python -m kubernetes.controller status
-    python -m kubernetes.controller teardown
+    python kubernetes/controller.py deploy --num-chunks 3 --model transformer
+    python kubernetes/controller.py deploy --num-chunks 2 --model transformer --cpu-only
+    python kubernetes/controller.py status
+    python kubernetes/controller.py teardown
 """
 
 import argparse
@@ -136,6 +137,7 @@ def _build_chunk_deployment(
     image: str = CHUNK_IMAGE,
     rdma_enabled: bool = False,
     nccl_enabled: bool = False,
+    cpu_only: bool = False,
 ) -> client.V1Deployment:
     """Build a Deployment object for a single model chunk."""
 
@@ -152,6 +154,8 @@ def _build_chunk_deployment(
         client.V1EnvVar(name="MODEL_TYPE", value=model_type),
         client.V1EnvVar(name="WEIGHTS_DIR", value="/data/chunks"),
         client.V1EnvVar(name="PORT", value=str(GRPC_PORT)),
+        client.V1EnvVar(name="DEVICE", value="cpu" if cpu_only else "cuda:0"),
+        client.V1EnvVar(name="KAI_ACCELERATOR_MODE", value="cpu" if cpu_only else "nvidia"),
     ]
 
     if nccl_enabled:
@@ -164,16 +168,21 @@ def _build_chunk_deployment(
         if iface:
             chunk_env.append(client.V1EnvVar(name="NCCL_SOCKET_IFNAME", value=iface))
 
+    chunk_resources = client.V1ResourceRequirements(
+        requests={"cpu": "500m", "memory": "1Gi"},
+        limits={"cpu": "2", "memory": "4Gi"},
+    )
+    if not cpu_only:
+        chunk_resources.requests["nvidia.com/gpu"] = "1"
+        chunk_resources.limits["nvidia.com/gpu"] = "1"
+
     container = client.V1Container(
         name="chunk-server",
         image=image,
         image_pull_policy="IfNotPresent",
         ports=[client.V1ContainerPort(container_port=GRPC_PORT, name="grpc")],
         env=chunk_env,
-        resources=client.V1ResourceRequirements(
-            requests={"cpu": "500m", "memory": "1Gi", "nvidia.com/gpu": "1"},
-            limits={"cpu": "2", "memory": "4Gi", "nvidia.com/gpu": "1"},
-        ),
+        resources=chunk_resources,
         volume_mounts=[
             client.V1VolumeMount(name="chunk-data", mount_path="/data/chunks"),
         ],
@@ -193,7 +202,7 @@ def _build_chunk_deployment(
         ]
     )
 
-    node_selector = {"nvidia.com/gpu.present": "true"}
+    node_selector = {} if cpu_only else {"nvidia.com/gpu.present": "true"}
     node_selector.update(_parse_node_selector(os.environ.get("KAI_CHUNK_NODE_SELECTOR", "")))
     if rdma_enabled:
         node_selector.update(_parse_node_selector(os.environ.get("KAI_RDMA_NODE_SELECTOR", "rdma.capable=true")))
@@ -206,8 +215,8 @@ def _build_chunk_deployment(
                 client.V1Volume(name="chunk-data", empty_dir=client.V1EmptyDirVolumeSource()),
             ],
             affinity=client.V1Affinity(pod_anti_affinity=anti_affinity),
-            node_selector=node_selector,
-            tolerations=[
+            node_selector=node_selector or None,
+            tolerations=[] if cpu_only else [
                 client.V1Toleration(
                     key="nvidia.com/gpu", operator="Exists", effect="NoSchedule",
                 ),
@@ -357,6 +366,7 @@ def _build_monitor_daemonset(
     sampling_rate: float = 1.0,
     tdp_watts: float = 0.0,
     enable_threshold: bool = False,
+    cpu_only: bool = False,
 ) -> dict:
     """Build the monitor DaemonSet as a raw dict.
 
@@ -364,7 +374,15 @@ def _build_monitor_daemonset(
     in all versions, so we use a dict that can be passed to create_namespaced_daemon_set.
     """
     labels = {"app": APP_LABEL, "component": "monitor"}
-    return {
+    monitor_resources = {
+        "requests": {"cpu": "100m", "memory": "256Mi"},
+        "limits": {"cpu": "500m", "memory": "512Mi"},
+    }
+    if not cpu_only:
+        monitor_resources["requests"]["nvidia.com/gpu"] = "1"
+        monitor_resources["limits"]["nvidia.com/gpu"] = "1"
+
+    spec = {
         "apiVersion": "apps/v1",
         "kind": "DaemonSet",
         "metadata": {
@@ -386,22 +404,12 @@ def _build_monitor_daemonset(
                             {"name": "MONITOR_PORT", "value": str(MONITOR_PORT)},
                             {"name": "GPU_INDEX", "value": "0"},
                             {"name": "SAMPLING_RATE", "value": str(sampling_rate)},
-                            {"name": "ENABLE_GPU", "value": "true"},
+                            {"name": "ENABLE_GPU", "value": "false" if cpu_only else "true"},
+                            {"name": "KAI_ACCELERATOR_MODE", "value": "cpu" if cpu_only else "nvidia"},
                             {"name": "TDP_WATTS", "value": str(tdp_watts)},
                             {"name": "ENABLE_THRESHOLD", "value": str(enable_threshold).lower()},
                         ],
-                        "resources": {
-                            "requests": {
-                                "cpu": "100m",
-                                "memory": "256Mi",
-                                "nvidia.com/gpu": "1",
-                            },
-                            "limits": {
-                                "cpu": "500m",
-                                "memory": "512Mi",
-                                "nvidia.com/gpu": "1",
-                            },
-                        },
+                        "resources": monitor_resources,
                         "readinessProbe": {
                             "httpGet": {"path": "/health", "port": MONITOR_PORT},
                             "initialDelaySeconds": 5,
@@ -415,16 +423,21 @@ def _build_monitor_daemonset(
                             "timeoutSeconds": 3,
                         },
                     }],
-                    "tolerations": [{
-                        "key": "nvidia.com/gpu",
-                        "operator": "Exists",
-                        "effect": "NoSchedule",
-                    }],
-                    "nodeSelector": {"nvidia.com/gpu.present": "true"},
                 },
             },
         },
     }
+
+    pod_spec = spec["spec"]["template"]["spec"]
+    if not cpu_only:
+        pod_spec["tolerations"] = [{
+            "key": "nvidia.com/gpu",
+            "operator": "Exists",
+            "effect": "NoSchedule",
+        }]
+        pod_spec["nodeSelector"] = {"nvidia.com/gpu.present": "true"}
+
+    return spec
 
 
 def _build_monitor_service() -> client.V1Service:
@@ -479,6 +492,7 @@ class KAIController:
         image: str = CHUNK_IMAGE,
         rdma_enabled: bool = False,
         nccl_enabled: bool = False,
+        cpu_only: bool = False,
     ) -> None:
         """Create Deployments and Services for N chunks.
 
@@ -517,11 +531,17 @@ class KAIController:
                 image,
                 rdma_enabled=rdma_enabled,
                 nccl_enabled=nccl_enabled,
+                cpu_only=cpu_only,
             )
             self.apps_v1.create_namespaced_deployment(self.namespace, dep)
             logger.info("Created Deployment %s", name)
 
-        logger.info("Deployed %d chunk(s) (model=%s)", num_chunks, model_type)
+        logger.info(
+            "Deployed %d chunk(s) (model=%s, accelerator=%s)",
+            num_chunks,
+            model_type,
+            "cpu" if cpu_only else "nvidia",
+        )
 
     def deploy_gateway(
         self,
@@ -564,6 +584,7 @@ class KAIController:
         sampling_rate: float = 1.0,
         tdp_watts: float = 0.0,
         enable_threshold: bool = False,
+        cpu_only: bool = False,
     ) -> None:
         """Create the monitor DaemonSet and Service.
 
@@ -595,6 +616,7 @@ class KAIController:
             sampling_rate=sampling_rate,
             tdp_watts=tdp_watts,
             enable_threshold=enable_threshold,
+            cpu_only=cpu_only,
         )
         self.apps_v1.create_namespaced_daemon_set(self.namespace, ds_body)
         logger.info("Created DaemonSet kai-monitor")
@@ -605,6 +627,7 @@ class KAIController:
         model_type: str = "transformer",
         rdma_enabled: bool = False,
         nccl_enabled: bool = False,
+        cpu_only: bool = False,
     ) -> None:
         """Deploy the full pipeline: chunks + gateway + monitor.
 
@@ -620,14 +643,20 @@ class KAIController:
             model_type,
             rdma_enabled=rdma_enabled,
             nccl_enabled=nccl_enabled,
+            cpu_only=cpu_only,
         )
         self.deploy_gateway(
             num_chunks,
             rdma_enabled=rdma_enabled,
             nccl_enabled=nccl_enabled,
         )
-        self.deploy_monitor()
-        logger.info("Full pipeline deployed (%d chunks, model=%s)", num_chunks, model_type)
+        self.deploy_monitor(cpu_only=cpu_only)
+        logger.info(
+            "Full pipeline deployed (%d chunks, model=%s, accelerator=%s)",
+            num_chunks,
+            model_type,
+            "cpu" if cpu_only else "nvidia",
+        )
 
     # ------------------------------------------------------------------
     # Wait for readiness
@@ -1180,6 +1209,11 @@ def main():
     deploy_p.add_argument("--timeout", type=int, default=300, help="Readiness timeout (seconds)")
     deploy_p.add_argument("--rdma", action="store_true", help="Enable RDMA-aware scheduling profile")
     deploy_p.add_argument("--nccl", action="store_true", help="Enable NCCL env tuning profile")
+    deploy_p.add_argument(
+        "--cpu-only",
+        action="store_true",
+        help="Run chunk and monitor pods without NVIDIA GPU resources. Use for AMD/non-NVIDIA/CPU worker nodes.",
+    )
 
     # status
     sub.add_parser("status", help="Show pod status")
@@ -1218,6 +1252,7 @@ def main():
             model_type=args.model,
             rdma_enabled=bool(args.rdma),
             nccl_enabled=bool(args.nccl),
+            cpu_only=bool(args.cpu_only),
         )
         if args.wait:
             ok = ctrl.wait_for_ready(timeout=args.timeout)

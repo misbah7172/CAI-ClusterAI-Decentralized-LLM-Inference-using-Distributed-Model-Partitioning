@@ -1,0 +1,15 @@
+# Local cluster secrets
+logs/k3s-node-token.txt
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+.venv*/
+
+# Local OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/

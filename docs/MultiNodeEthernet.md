@@ -363,6 +363,31 @@ sudo k3s kubectl rollout status ds/nvidia-device-plugin-daemonset -n kube-system
 
 If GPU capacity still does not appear, the cluster can still prove multi-node scheduling, but KAI GPU chunk pods will stay pending until Kubernetes advertises `nvidia.com/gpu`.
 
+## 10.1 AMD or Non-NVIDIA Worker Nodes
+
+KAI's CUDA GPU path uses NVIDIA CUDA and Kubernetes advertises those devices as:
+
+```text
+nvidia.com/gpu
+```
+
+An AMD laptop GPU will not appear as `nvidia.com/gpu`. On Windows/WSL, AMD ROCm support is also not a drop-in replacement for the current CUDA path. Treat AMD laptops as CPU/RAM workers unless a separate ROCm runtime is added.
+
+For AMD, integrated GPU, or CPU-only worker nodes, deploy the KAI Kubernetes pipeline with CPU mode:
+
+```powershell
+wsl -d Ubuntu-22.04 -- bash -lc "cd /opt/kai && source .venv310/bin/activate && python kubernetes/controller.py deploy --num-chunks 2 --model transformer --cpu-only --wait"
+```
+
+CPU mode intentionally removes:
+
+```text
+nvidia.com/gpu: 1
+nvidia.com/gpu.present=true
+```
+
+This lets chunk and monitor pods schedule on AMD/non-NVIDIA workers. It is slower than CUDA, but it will not damage the worker or the cluster. The default GPU deployment remains unchanged when `--cpu-only` is not used.
+
 ## 11. Deploy KAI After GPU Capacity Appears
 
 Only run this when both nodes show GPU capacity or when the KAI deployment has been changed to CPU mode.
@@ -399,7 +424,7 @@ sudo k3s ctr images import kai-monitor.tar
 Deploy KAI:
 
 ```powershell
-wsl -d Ubuntu-22.04 -- bash -lc "cd /opt/kai && source .venv310/bin/activate && python -m kubernetes.controller deploy --num-chunks 2 --model transformer --wait"
+wsl -d Ubuntu-22.04 -- bash -lc "cd /opt/kai && source .venv310/bin/activate && python kubernetes/controller.py deploy --num-chunks 2 --model transformer --wait"
 ```
 
 Verify pod placement:
