@@ -412,9 +412,9 @@ def cmd_benchmark(args):
 
 
 def cmd_dashboard(args):
-    """Launch the Streamlit dashboard."""
-    app_file = "dashboard/app.py" if getattr(args, "legacy", False) else "dashboard/unified_app.py"
-    print(f"[KAI] Launching dashboard ({os.path.basename(app_file)})...")
+    """Launch the comprehensive Streamlit dashboard."""
+    app_file = "dashboard/comprehensive_dashboard.py"
+    print(f"[KAI] Launching Comprehensive Dashboard ({os.path.basename(app_file)})...")
     cmd = [
         sys.executable, "-m", "streamlit", "run", app_file,
         "--server.headless", "true",
