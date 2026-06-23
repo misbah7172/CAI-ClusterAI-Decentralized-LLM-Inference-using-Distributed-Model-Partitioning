@@ -1,19 +1,19 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Test-KaiAdministrator {
+function Test-CaiAdministrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = [Security.Principal.WindowsPrincipal]::new($identity)
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-function Ensure-KaiAdministrator {
+function Ensure-CaiAdministrator {
     param(
         [Parameter(Mandatory = $true)][string]$ScriptPath,
         [string[]]$RemainingArgs = @()
     )
 
-    if (Test-KaiAdministrator) {
+    if (Test-CaiAdministrator) {
         return
     }
 
@@ -22,11 +22,11 @@ function Ensure-KaiAdministrator {
     exit
 }
 
-function Test-KaiWslAvailable {
+function Test-CaiWslAvailable {
     return [bool](Get-Command wsl.exe -ErrorAction SilentlyContinue)
 }
 
-function Convert-KaiWindowsPathToWsl {
+function Convert-CaiWindowsPathToWsl {
     param(
         [Parameter(Mandatory = $true)][string]$Path
     )
@@ -41,12 +41,12 @@ function Convert-KaiWindowsPathToWsl {
     return $resolved -replace '\\', '/'
 }
 
-function Ensure-KaiWslAndDistro {
+function Ensure-CaiWslAndDistro {
     param(
         [string]$Distro = 'Ubuntu-22.04'
     )
 
-    if (-not (Test-KaiWslAvailable)) {
+    if (-not (Test-CaiWslAvailable)) {
         Write-Host 'WSL is not installed. Enabling Windows features and installing Ubuntu-22.04...'
         & dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart | Out-Host
         & dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart | Out-Host
@@ -79,7 +79,7 @@ function Ensure-KaiWslAndDistro {
     }
 }
 
-function Invoke-KaiWslPython {
+function Invoke-CaiWslPython {
     param(
         [Parameter(Mandatory = $true)][string]$PythonScriptWslPath,
         [Parameter(Mandatory = $true)][string[]]$Arguments,
@@ -96,9 +96,9 @@ function Invoke-KaiWslPython {
     }
 }
 
-function Get-KaiWslToken {
+function Get-CaiWslToken {
     param(
-        [string]$TokenPath = '~/.kai/k3s-node-token.txt',
+        [string]$TokenPath = '~/.CAI/k3s-node-token.txt',
         [string]$Distro = 'Ubuntu-22.04'
     )
 

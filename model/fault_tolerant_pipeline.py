@@ -1,5 +1,5 @@
 """
-Fault-Tolerant Inference Pipeline for KAI.
+Fault-Tolerant Inference Pipeline for CAI.
 
 Improves reliability through:
 - Node failure detection mid-inference
@@ -142,7 +142,7 @@ class CheckpointManager:
     
     def __init__(
         self,
-        checkpoint_dir: str = "/tmp/kai_checkpoints",
+        checkpoint_dir: str = "/tmp/cai_checkpoints",
         max_checkpoints: int = 10,
     ):
         self._dir = checkpoint_dir
@@ -561,7 +561,7 @@ class FaultTolerantPipeline:
         gateway,  # InferenceGateway
         checkpoint_interval: int = 1,
         max_retries: int = 3,
-        checkpoint_dir: str = "/tmp/kai_checkpoints",
+        checkpoint_dir: str = "/tmp/cai_checkpoints",
     ):
         self._gateway = gateway
         self._checkpoint_interval = checkpoint_interval

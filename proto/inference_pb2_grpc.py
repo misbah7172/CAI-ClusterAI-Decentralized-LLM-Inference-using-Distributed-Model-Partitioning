@@ -38,27 +38,27 @@ class InferenceServiceStub(object):
             channel: A grpc.Channel.
         """
         self.Infer = channel.unary_unary(
-                '/kai.InferenceService/Infer',
+                '/CAI.InferenceService/Infer',
                 request_serializer=inference__pb2.InferRequest.SerializeToString,
                 response_deserializer=inference__pb2.InferResponse.FromString,
                 _registered_method=True)
         self.HealthCheck = channel.unary_unary(
-                '/kai.InferenceService/HealthCheck',
+                '/CAI.InferenceService/HealthCheck',
                 request_serializer=inference__pb2.HealthRequest.SerializeToString,
                 response_deserializer=inference__pb2.HealthResponse.FromString,
                 _registered_method=True)
         self.Pause = channel.unary_unary(
-                '/kai.InferenceService/Pause',
+                '/CAI.InferenceService/Pause',
                 request_serializer=inference__pb2.PauseRequest.SerializeToString,
                 response_deserializer=inference__pb2.PauseResponse.FromString,
                 _registered_method=True)
         self.Checkpoint = channel.unary_unary(
-                '/kai.InferenceService/Checkpoint',
+                '/CAI.InferenceService/Checkpoint',
                 request_serializer=inference__pb2.CheckpointRequest.SerializeToString,
                 response_deserializer=inference__pb2.CheckpointResponse.FromString,
                 _registered_method=True)
         self.Resume = channel.unary_unary(
-                '/kai.InferenceService/Resume',
+                '/CAI.InferenceService/Resume',
                 request_serializer=inference__pb2.ResumeRequest.SerializeToString,
                 response_deserializer=inference__pb2.ResumeResponse.FromString,
                 _registered_method=True)
@@ -135,9 +135,9 @@ def add_InferenceServiceServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'kai.InferenceService', rpc_method_handlers)
+            'CAI.InferenceService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('kai.InferenceService', rpc_method_handlers)
+    server.add_registered_method_handlers('CAI.InferenceService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -161,7 +161,7 @@ class InferenceService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/kai.InferenceService/Infer',
+            '/CAI.InferenceService/Infer',
             inference__pb2.InferRequest.SerializeToString,
             inference__pb2.InferResponse.FromString,
             options,
@@ -188,7 +188,7 @@ class InferenceService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/kai.InferenceService/HealthCheck',
+            '/CAI.InferenceService/HealthCheck',
             inference__pb2.HealthRequest.SerializeToString,
             inference__pb2.HealthResponse.FromString,
             options,
@@ -215,7 +215,7 @@ class InferenceService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/kai.InferenceService/Pause',
+            '/CAI.InferenceService/Pause',
             inference__pb2.PauseRequest.SerializeToString,
             inference__pb2.PauseResponse.FromString,
             options,
@@ -242,7 +242,7 @@ class InferenceService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/kai.InferenceService/Checkpoint',
+            '/CAI.InferenceService/Checkpoint',
             inference__pb2.CheckpointRequest.SerializeToString,
             inference__pb2.CheckpointResponse.FromString,
             options,
@@ -269,7 +269,7 @@ class InferenceService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/kai.InferenceService/Resume',
+            '/CAI.InferenceService/Resume',
             inference__pb2.ResumeRequest.SerializeToString,
             inference__pb2.ResumeResponse.FromString,
             options,

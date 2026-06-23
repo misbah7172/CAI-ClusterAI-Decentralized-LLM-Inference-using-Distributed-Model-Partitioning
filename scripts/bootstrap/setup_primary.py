@@ -15,13 +15,13 @@ from common import (
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Bootstrap a KAI primary/control-plane node.")
+    parser = argparse.ArgumentParser(description="Bootstrap a CAI primary/control-plane node.")
     parser.add_argument("--workspace", default=DEFAULT_WORKSPACE, help="Repo workspace path (Linux/WSL path).")
     parser.add_argument("--repo-url", default=DEFAULT_REPO_URL, help="Git repository URL to clone on the node.")
     parser.add_argument("--server-ip", required=True, help="LAN IP address of the primary node.")
     parser.add_argument(
         "--token-file",
-        default="~/.kai/k3s-node-token.txt",
+        default="~/.CAI/k3s-node-token.txt",
         help="Where to save the K3s join token on the primary node.",
     )
     parser.add_argument("--distro", default="Ubuntu-22.04", help="WSL distro name when running on Windows.")

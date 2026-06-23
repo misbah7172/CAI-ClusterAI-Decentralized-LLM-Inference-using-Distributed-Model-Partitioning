@@ -1,4 +1,4 @@
-# KAI — Kubernetes AI Distributed Inference Platform
+# CAI — Kubernetes AI Distributed Inference Platform
 
 **Title**  
 **Energy-Efficient Distributed LLM Inference on Heterogeneous Edge Clusters Using Kubernetes Orchestration**
@@ -11,22 +11,22 @@ Md Habibulla Misba - 011221373
 
 ## 1. Summary
 
-This project presents KAI (Kubernetes AI), a distributed inference platform that enables running large language models (LLMs) across clusters of heterogeneous low-end devices using Kubernetes orchestration. The platform addresses the critical challenge of deploying modern AI models that exceed the memory capacity of individual consumer-grade hardware. By implementing layer-wise model partitioning, intelligent placement strategies, and energy-aware scheduling, KAI achieves significant energy savings compared to traditional single high-end GPU deployments while maintaining inference quality. The system includes comprehensive energy benchmarking capabilities, real-time power monitoring, dynamic load balancing, and next-generation optimizations including speculative decoding, hybrid parallelism, and adaptive precision control.
+This project presents CAI (Kubernetes AI), a distributed inference platform that enables running large language models (LLMs) across clusters of heterogeneous low-end devices using Kubernetes orchestration. The platform addresses the critical challenge of deploying modern AI models that exceed the memory capacity of individual consumer-grade hardware. By implementing layer-wise model partitioning, intelligent placement strategies, and energy-aware scheduling, CAI achieves significant energy savings compared to traditional single high-end GPU deployments while maintaining inference quality. The system includes comprehensive energy benchmarking capabilities, real-time power monitoring, dynamic load balancing, and next-generation optimizations including speculative decoding, hybrid parallelism, and adaptive precision control.
 
 ---
 
 ## 2. Motivation
 
-The rapid advancement of Large Language Models has created a significant accessibility gap. State-of-the-art models like LLaMA, Mistral, and GPT variants require 16GB–80GB of VRAM, far exceeding consumer GPU capacity. This motivates KAI's development across three critical dimensions:
+The rapid advancement of Large Language Models has created a significant accessibility gap. State-of-the-art models like LLaMA, Mistral, and GPT variants require 16GB–80GB of VRAM, far exceeding consumer GPU capacity. This motivates CAI's development across three critical dimensions:
 
 ### 2.1 Accessibility Need
-Organizations and researchers with limited hardware budgets cannot access modern LLMs. High-end GPUs (A100, H100, RTX 4090) cost $10,000–$40,000 and consume 300–700W of power. KAI enables these same models to run on clusters of commodity hardware (GTX 1060, RTX 3050 Ti) that are affordable and widely available.
+Organizations and researchers with limited hardware budgets cannot access modern LLMs. High-end GPUs (A100, H100, RTX 4090) cost $10,000–$40,000 and consume 300–700W of power. CAI enables these same models to run on clusters of commodity hardware (GTX 1060, RTX 3050 Ti) that are affordable and widely available.
 
 ### 2.2 Energy Efficiency Need
 AI inference contributes significantly to global energy consumption. A single RTX 4090 draws 350–450W during LLM inference, while the same workload distributed across four GTX 1060 GPUs consumes only 160W total—**less than half the power for identical output**. This reduction has substantial implications for sustainable AI deployment.
 
 ### 2.3 Research Need
-Current benchmarking tools (MLPerf, AI Benchmark) focus on throughput and latency without measuring energy as a first-class metric. There is no standardized framework comparing local vs. distributed AI inference energy costs. KAI fills this gap by providing reproducible, energy-aware benchmarking infrastructure that isolates orchestration overhead, network costs, and quantification of distributed execution trade-offs.
+Current benchmarking tools (MLPerf, AI Benchmark) focus on throughput and latency without measuring energy as a first-class metric. There is no standardized framework comparing local vs. distributed AI inference energy costs. CAI fills this gap by providing reproducible, energy-aware benchmarking infrastructure that isolates orchestration overhead, network costs, and quantification of distributed execution trade-offs.
 
 ### 2.4 Alignment with Current Research
 This work aligns with recent advances in distributed LLM inference, including:
@@ -45,7 +45,7 @@ How can we enable energy-efficient inference of large language models on cluster
 
 ### 3.2 Identified Gaps in Current Solutions
 
-| Gap | Current State | What KAI Addresses |
+| Gap | Current State | What CAI Addresses |
 |-----|---------------|-------------------|
 | Memory fragmentation | Models require contiguous VRAM allocation | Layer-wise chunking across nodes |
 | Energy-aware benchmarking | Not available in standard tools | GPU power, energy (Wh), correlated with latency |
@@ -70,7 +70,7 @@ How can we enable energy-efficient inference of large language models on cluster
 
 ```
                     ┌─────────────┐
-                    │  kai_cli.py │
+                    │  cai_cli.py │
                     │  (CLI)      │
                     └──────┬──────┘
                            │
@@ -296,7 +296,7 @@ How can we enable energy-efficient inference of large language models on cluster
 - Launch dashboard with CUDA runtime:
   - ./.venv310/Scripts/python -m streamlit run dashboard/comprehensive_dashboard.py
 - Optional launcher command:
-  - python kai_cli_dashboard.py --port 8511 dashboard-pro
+  - python cai_cli_dashboard.py --port 8511 dashboard-pro
 
 ### Live GPU Telemetry (Implemented)
 - Real-time panel now shows:
@@ -334,6 +334,6 @@ How can we enable energy-efficient inference of large language models on cluster
 ### Change Artifacts
 - Updated implementation files include:
   - dashboard/comprehensive_dashboard.py
-  - kai_cli_dashboard.py
+  - cai_cli_dashboard.py
   - README.md
 - Documentation synchronized with current implemented state as of this update.

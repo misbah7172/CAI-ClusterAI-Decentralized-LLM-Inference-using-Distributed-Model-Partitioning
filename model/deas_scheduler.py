@@ -146,7 +146,7 @@ class DEASScheduler:
         Event bus to subscribe to CRITICAL events.
     auto_partitioner : AutoPartitioner
         Partitioner for recalculation.
-    controller : KAIController, optional
+    controller : CAIController, optional
         K8s controller for executing migrations.
     cooldown_s : float
         Minimum seconds between consecutive repartition attempts.

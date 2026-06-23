@@ -1,5 +1,5 @@
 """
-Network-Aware Scheduling for KAI.
+Network-Aware Scheduling for CAI.
 
 Enhances DEAS scheduler with network awareness:
 - Track inter-node latency and bandwidth usage
@@ -154,7 +154,7 @@ class NetworkMonitor:
 
     @staticmethod
     def _load_link_overrides_from_env() -> Dict[str, Dict[str, float]]:
-        raw = os.environ.get("KAI_NETWORK_LINKS_JSON", "")
+        raw = os.environ.get("CAI_NETWORK_LINKS_JSON", "")
         if not raw:
             return {}
         try:
@@ -166,7 +166,7 @@ class NetworkMonitor:
                     if isinstance(v, dict)
                 }
         except Exception as e:
-            logger.warning("Invalid KAI_NETWORK_LINKS_JSON value: %s", e)
+            logger.warning("Invalid CAI_NETWORK_LINKS_JSON value: %s", e)
         return {}
     
     def start(self) -> None:

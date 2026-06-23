@@ -1,4 +1,4 @@
-name: Build and Publish KAI Docker Image
+name: Build and Publish CAI Docker Image
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/kai-dashboard
+          images: ghcr.io/${{ github.repository_owner }}/CAI-dashboard
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha

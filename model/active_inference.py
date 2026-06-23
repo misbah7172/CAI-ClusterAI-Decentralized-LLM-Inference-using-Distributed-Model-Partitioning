@@ -494,7 +494,7 @@ class ActiveInferenceAgent:
 class ActiveInferenceController:
     """
     Controller that uses Active Inference for system optimization.
-    Integrates with KAI monitoring and execution systems.
+    Integrates with CAI monitoring and execution systems.
     """
     
     def __init__(

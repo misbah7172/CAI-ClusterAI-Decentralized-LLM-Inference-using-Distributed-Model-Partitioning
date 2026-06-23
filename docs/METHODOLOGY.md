@@ -1,8 +1,8 @@
-# KAI: Kubernetes AI Inference Platform — Methodology
+# CAI: Kubernetes AI Inference Platform — Methodology
 
 ## Abstract
 
-KAI (Kubernetes AI Inference) is a distributed AI inference platform designed to run large language models (LLMs) across clusters of commodity hardware while optimizing for energy efficiency, latency, and throughput. This document presents the comprehensive research methodology behind KAI's design, implementation, and evaluation using a structured 13-section research framework.
+CAI (Kubernetes AI Inference) is a distributed AI inference platform designed to run large language models (LLMs) across clusters of commodity hardware while optimizing for energy efficiency, latency, and throughput. This document presents the comprehensive research methodology behind CAI's design, implementation, and evaluation using a structured 13-section research framework.
 
 ---
 
@@ -90,7 +90,7 @@ Where $x_i$ = utilization of worker $i$, Range: $[\frac{1}{n}, 1]$, with 1.0 = p
 
 ### 2.1 Overall Framework
 
-KAI is composed of two logical planes:
+CAI is composed of two logical planes:
 
 **Control Plane (Centralized):**
 - **Gateway**: HTTP/gRPC entry point for inference requests with tokenization
@@ -108,7 +108,7 @@ KAI is composed of two logical planes:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         KAI Control Plane                           │
+│                         CAI Control Plane                           │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
 │  │   Gateway   │  │  Scheduler  │  │   Monitor   │  │  Auto-Tuner │ │
@@ -179,7 +179,7 @@ KAI is composed of two logical planes:
 
 ### 3.1 Dataset Source
 
-KAI is an inference platform; evaluation datasets come from multiple sources:
+CAI is an inference platform; evaluation datasets come from multiple sources:
 
 **Public Datasets (Pre-trained Models):**
 - **HuggingFace Model Hub**: Llama-2-7b, Mistral-7b, Phi-2, OpenHermes
@@ -311,7 +311,7 @@ Baseline: 10 tokens/sec (conservative estimate for 7B model on RTX 3050).
 
 #### Layer-Wise Model Partitioning
 
-KAI partitions transformer models at layer boundaries, enabling distribution across nodes without modifying model internals.
+CAI partitions transformer models at layer boundaries, enabling distribution across nodes without modifying model internals.
 
 **Algorithm 1: Proportional Layer Assignment**
 
@@ -470,7 +470,7 @@ Used for online adaptation of batch_size, quantization precision, offload decisi
 **Main Inference Pipeline (Python-style):**
 
 ```python
-def kai_inference(model_name: str, prompt: str, config: InferenceConfig) -> str:
+def cai_inference(model_name: str, prompt: str, config: InferenceConfig) -> str:
     """
     Main inference loop combining partitioning, scheduling, and optimization
     """
@@ -1132,7 +1132,7 @@ Gateway process:
 
 ## Implementation Status - 2026-04-11
 
-KAI methodology is fully implemented with comprehensive dashboard observability ([dashboard/comprehensive_dashboard.py](dashboard/comprehensive_dashboard.py)), distributed scheduling (DEAS, FCIM, ADSA, ILP modes), advanced memory optimization (mixed-precision KV cache, tiered weight management), and fault tolerance support. 
+CAI methodology is fully implemented with comprehensive dashboard observability ([dashboard/comprehensive_dashboard.py](dashboard/comprehensive_dashboard.py)), distributed scheduling (DEAS, FCIM, ADSA, ILP modes), advanced memory optimization (mixed-precision KV cache, tiered weight management), and fault tolerance support. 
 
 **Recommended Path for Reproduction:**
 - Use `.venv310` environment for CUDA-backed execution to reproduce performance characteristics
@@ -1144,13 +1144,13 @@ KAI methodology is fully implemented with comprehensive dashboard observability 
 *Document Version: 2.0 (Research Methodology Format)*
 *Last Updated: April 2026*
 *Structure: 13-Section Research Paper Framework*
-*Maintainer: KAI Development Team*
+*Maintainer: CAI Development Team*
 
 ### 2.1 High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         KAI Control Plane                           │
+│                         CAI Control Plane                           │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
 │  │   Gateway   │  │  Scheduler  │  │   Monitor   │  │  Auto-Tuner │ │
@@ -1390,7 +1390,7 @@ All baselines: publicly available, support same models, comparable metrics, diff
 
 ## Implementation Status - 2026-04-11
 
-KAI methodology is fully implemented with comprehensive dashboard observability through `dashboard/comprehensive_dashboard.py`, distributed scheduling (DEAS, FCIM, ADSA, ILP), advanced memory optimization (mixed-precision KV cache, tiered weight management), and fault tolerance support.
+CAI methodology is fully implemented with comprehensive dashboard observability through `dashboard/comprehensive_dashboard.py`, distributed scheduling (DEAS, FCIM, ADSA, ILP), advanced memory optimization (mixed-precision KV cache, tiered weight management), and fault tolerance support.
 
 **Recommended Path for Reproduction:**
 Use `.venv310` environment for CUDA-backed execution to reproduce performance and energy characteristics.

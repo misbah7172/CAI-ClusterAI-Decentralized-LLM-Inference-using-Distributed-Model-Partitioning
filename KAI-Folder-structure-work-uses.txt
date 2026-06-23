@@ -1,0 +1,297 @@
+what is the use of this folder experiments                                                     
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+✦ The experiments folder is the automated benchmarking hub of the CAI platform. It is designed to
+  run controlled, reproducible tests that compare how AI models perform in different environments.
+
+  Its primary purpose is to collect the empirical data used for energy and performance analysis.
+  Here is a breakdown of the core files:
+
+   * local_runner.py: Runs inference on a single local GPU. It measures baseline metrics like
+     "raw" latency, GPU power draw, and throughput without any network overhead.
+   * k8s_runner.py: Orchestrates a distributed inference run on a Kubernetes cluster. it interacts
+     with the kubernetes/controller.py to deploy model chunks, send requests through the gateway,
+     and collect metrics from the cluster nodes.
+   * experiment_runner.py: The unified entry point. It can run both local and Kubernetes
+     experiments back-to-back using the same model and parameters, ensuring a "fair" side-by-side
+     comparison.
+
+  Typical Workflow:
+  When you run a command like python cai_cli.py benchmark --mode both, the code in this folder:
+   1. Sets up the environment (local or K8s).
+   2. Executes a specific number of inference iterations (e.g., 50 runs).
+   3. Synchronizes with the monitors to capture real-time power and CPU usage.
+   4. Saves the results as structured JSON files in the logs/ folder for later analysis.
+
+
+what is the use of this cai_swap folder? why this created                                             
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+✦ The cai_swap folder (and sometimes the swap folder) is used as "Virtual Memory" for your GPU weights. 
+
+  It is created when you use the CPU/Disk Offloading feature (often triggered by the --offload flag in
+  the CLI). Its primary purpose is to allow you to run models that are larger than your actual hardware
+  memory.
+
+  Why it was created:
+  If you try to run a model that requires 16GB of VRAM on an 8GB GPU, the model would normally crash with
+  an "Out of Memory" (OOM) error. CAI prevents this by using a Tiered Weight Management system:
+
+   1. GPU VRAM: Holds the layers currently being computed (the fastest).
+   2. System RAM: Holds the next few layers ready to be swapped in.
+   3. Disk (cai_swap): Holds the rest of the model weights that don't fit in memory.
+
+  How it works:
+  When the inference engine finishes processing one "chunk" of layers, it:
+   1. Moves the next layers from the cai_swap folder into your RAM.
+   2. Moves them from RAM into your GPU VRAM.
+   3. Deletes or "swaps out" the old layers to make room.
+
+  Can I delete it?
+   * Yes: If you aren't currently running an inference task with offloading, you can safely delete the
+     contents of this folder. 
+   * Automatic: CAI usually creates this directory automatically whenever a command like python
+     cai_cli.py run --offload is executed.
+
+  In short, it’s a temporary staging area that enables "budget" hardware to run "premium" large models by
+  trading disk speed for memory capacity.
+
+
+use of kubernetes folder?                                                                             
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+✦ The kubernetes folder contains the "orchestration logic" for the platform. While the model folder
+  contains the AI logic, the kubernetes folder contains the code that manages where and how those models
+  run across a cluster of machines.
+
+  Its primary purpose is to automate the complex task of setting up a distributed network of AI workers.
+  Here is what is inside:
+
+  1. controller.py (The Brain)
+  This is a Python-based manager that communicates with the Kubernetes API. It handles:
+   * Deployment: Automatically creating the "Chunk Server" pods, the "Gateway," and the "Monitor"
+     service.
+   * Scaling: Telling the cluster how many chunks to create based on your command (e.g., --num-chunks 3).
+   * Lifecycle: Starting, stopping, and cleaning up (tearing down) the cluster resources so you don't
+     have to write YAML manually.
+
+  2. deployments/ and services/
+  These subfolders contain the Blueprints (YAML files) for the cluster:
+   * chunk-deployment.yaml: Defines how the AI worker containers should run (requesting GPU access,
+     setting memory limits).
+   * gateway-service.yaml: Sets up the "entry point" so your local machine can send a prompt to the
+     cluster.
+   * monitor-service.yaml: Deploys a monitor on every machine in the cluster to track GPU power draw
+     across the whole network.
+
+  3. gpu-resource-quota.yaml
+  This is a safety file. It prevents CAI from accidentally using more GPUs than your cluster has
+  available, which avoids "Pending" pod errors.
+
+  Summary: Why do you need it?
+  Without this folder, CAI would only be able to run models on your local machine. This folder is what
+  allows CAI to connect multiple low-end PCs together to act as one giant AI supercomputer. It handles
+  all the "networking and server management" so you can just focus on the AI inference.
+
+
+use of model folder                                                                                   
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+✦ The model folder is the "AI Engine Room" of the entire project. While other folders handle dashboards
+  or servers, this folder contains the actual mathematics and logic that load, split, and run the AI
+  models.
+
+  It is the most critical part of the codebase, divided into four main roles:
+
+  1. Model Loading & Partitioning (The "Splitter")
+  These files handle taking a massive model (like Llama-3 or Phi-2) and breaking it into pieces:
+   * hf_loader.py: The bridge to HuggingFace. It downloads models and analyzes their internal "layers."
+   * auto_partitioner.py: The "Smart Planner." It looks at your available GPUs and decides exactly which
+     layers should go to which machine.
+   * layer_chunker.py: Physically slices the model into "chunks" that can be sent to different nodes.
+
+  2. The Generation Engine (The "Speaker")
+  This is the code that actually produces text:
+   * generation.py: Manages the "Distributed Forward Pass." It ensures that when one machine finishes
+     processing its layers, the data is handed off perfectly to the next machine via gRPC.
+   * speculative_decoder.py: An optimization that uses a tiny "draft" model to guess tokens faster, which
+     the big model then verifies.
+
+  3. Memory & Efficiency (The "Optimizer")
+  These files allow the model to run on "low-end" hardware:
+   * quantizer.py: Shrinks the model weights (e.g., from 16-bit to 4-bit) so they fit in small GPUs.
+   * kv_cache_optimizer.py: Speeds up text generation by remembering previous parts of the conversation
+     in a compressed format.
+   * tiered_weight_manager.py: The logic behind the cai_swap folder; it manages moving weights between
+     GPU, RAM, and Disk.
+   * oom_guardian.py: A "safety officer" that watches for Out-of-Memory crashes and intervenes before the
+     system fails.
+
+  4. Advanced Scheduling (The "Traffic Controller")
+  These files decide the best way to handle multiple requests:
+   * deas_scheduler.py: (Dynamic Energy-Aware Scheduler) Makes decisions based on electricity/power
+     usage.
+   * ilp_scheduler.py: Uses "Integer Linear Programming" (complex math) to find the mathematically
+     perfect way to assign tasks to workers.
+
+  Summary
+  If you want to change how the AI behaves, how fast it generates text, or how it uses memory, the model
+  folder is where you do the work.
+
+
+use of ILP . where and how it uses?                                                                   
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+✦ In CAI, ILP (Integer Linear Programming) is used to solve the "Puzzle" of distributed AI: "Which
+  machine should handle which part of the model to get the fastest result with the lowest power usage?"
+
+  While a simple script might just split a model in half, the ILP scheduler uses complex mathematics to
+  find the mathematically perfect assignment.
+
+  ---
+
+  1. Where is it used?
+  It is located in model/ilp_scheduler.py. 
+
+  It comes into play during the Scheduling/Partitioning phase, specifically when you have a cluster of
+  different machines (e.g., one PC with a good GPU, one with a weak GPU, and one with only a CPU). 
+
+  2. How does it work? (The Math)
+  ILP treats your cluster like a math equation with Variables, Constraints, and an Objective.
+
+  A. The Variables (The Decisions)
+  The "Integer" part of ILP means the decisions are binary (0 or 1). 
+   * Is Layer 5 on Node A? (1 for Yes, 0 for No).
+   * The computer cannot put "half a layer" on a machine.
+
+  B. The Constraints (The Rules)
+  The ILP solver ensures that no rule is broken:
+   * Memory Constraint: The total size of layers assigned to Node A must be less than Node A’s VRAM.
+   * Assignment Constraint: Every single layer of the model must be assigned to exactly one machine (no
+     missing layers).
+   * Dependency Constraint: Layer 10 cannot start until Layer 9 (wherever it is) finishes.
+
+  C. The Objective (The Goal)
+  You tell the ILP what you care about most. It then searches all possible combinations to minimize a
+  cost function:
+   * Minimize Latency: Find the split that results in the fastest tokens per second.
+   * Minimize Energy: Find the split that uses the least amount of electricity.
+   * Balanced: A mix of both.
+
+  ---
+
+  3. Why use ILP instead of a simple loop?
+  A simple "Greedy" loop might put all the layers on the first machine until it's full, then move to the
+  next. This is often inefficient.
+
+  The ILP Advantage:
+  Imagine you have 30 layers and 3 nodes. There are millions of ways to split them. 
+   * A human or a simple loop might pick a "good" way.
+   * ILP finds the "Best" way. It might realize that putting a slightly heavier load on a faster node and
+     keeping a lighter load on a slower node reduces the "bottleneck" (wait time), making the whole
+     system 20% faster.
+
+  4. Implementation Detail
+  In the code, CAI uses a library called PuLP (or a fallback heuristic). 
+   1. It builds a mathematical model of your hardware.
+   2. It sends that model to a "Solver" (like CBC or GLPK).
+   3. The solver returns the "Optimal Plan."
+   4. CAI then uses that plan to deploy the Docker containers to Kubernetes.
+
+  Summary: ILP is the "Master Architect" that ensures your cluster is balanced perfectly so no single
+  machine is working too hard while others are sitting idle.
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+ > what is mixed precision KV caching                                                                    
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+✦ Mixed Precision KV Caching is an advanced memory-saving technique used in LLM inference. In CAI, it is
+  managed by the model/kv_cache_optimizer.py module.
+
+  To understand it, you first need to know what a KV Cache is: when an AI generates text, it "remembers"
+  every previous word by storing mathematical vectors (Keys and Values). As the conversation gets longer,
+  this cache grows until it eats up all your GPU memory (VRAM).
+
+  Mixed Precision solves this by using different levels of mathematical "sharpness" (precision) for
+  different parts of the memory.
+
+  ---
+
+  How it Works (The "Two-Zone" Strategy)
+
+  CAI divides your conversation history into two zones:
+
+  1. The "Recent" Zone (High Precision - FP16)
+   * What: The last few tokens (words) the AI just generated.
+   * Precision: Stored in 16-bit (FP16).
+   * Why: The words immediately preceding the current one are the most important for accuracy. Even a
+     tiny mathematical error here could make the AI say something nonsensical.
+
+  2. The "Historical" Zone (Low Precision - INT8 or INT4)
+   * What: Words from earlier in the conversation (e.g., 50 or 100 words ago).
+   * Precision: Compressed down to 8-bit (INT8) or 4-bit (INT4).
+   * Why: Older context is still necessary for the AI to "remember" the topic, but it doesn't need to be
+     mathematically perfect. Compressing these older tokens saves massive amounts of space with almost
+     zero noticeable loss in quality.
+
+  ---
+
+  The Benefits for CAI
+
+   1. 70% Memory Savings: By compressing the "Historical" zone, CAI can reduce the memory footprint of
+      the KV cache by 50% to 75%. This is the difference between an AI forgetting what you said after 500
+      words versus 2,000 words.
+   2. Longer Conversations: It allows "budget" GPUs (like an RTX 3050 or 3060) to handle much longer
+      prompts and documents without crashing with an "Out of Memory" error.
+   3. Faster Generation: Since 4-bit or 8-bit data is smaller, the GPU can move that data through its
+      circuits faster, slightly increasing the tokens-per-second (speed).
+
+  Summary
+  Instead of treating all "memories" as equally important, Mixed Precision KV Caching keeps recent
+  memories "clear" (High Precision) and older memories "blurry" (Low Precision). This allows the system
+  to store a lot more information using the same amount of GPU hardware.
+
+
+ what is the use of monitoring folder                                                                  
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+✦ The monitoring folder is the "Nervous System" of the CAI platform. Since the primary goal of the CAI
+  research project is to measure Energy Efficiency, this folder contains the code that tracks exactly how
+  much electricity and computer power the AI is using in real-time.
+
+  It is responsible for turning raw hardware signals into the charts and data you see in the dashboard.
+
+  ---
+
+  Core Components
+
+  1. Hardware Sensors (gpu_monitor.py & cpu_monitor.py)
+  These are the "Probes" that talk to your hardware:
+   * GPU Monitor: Uses NVIDIA NVML (pynvml) to check the GPU's power draw (Watts), temperature,
+     utilization, and VRAM usage every 100ms.
+   * CPU Monitor: Uses psutil to track how much the processor is working to manage the AI traffic.
+
+  2. The Energy Math Engine (metrics.py)
+  This is where the most important research calculations happen.
+   * Trapezoidal Integration: Instead of just taking an average, CAI uses a math technique called
+     "Trapezoidal Integration" to calculate Total Energy (Watt-hours). It measures the area under the
+     power curve to give a highly accurate report of exactly how much battery or wall power an inference
+     "cost."
+
+  3. Thresholds & Safety (threshold_service.py & event_bus.py)
+  This acts as a "Safety Officer" for the cluster:
+   * It categorizes the GPU state into Optimal, Warning, or Critical.
+   * If a machine gets too hot or uses too much power, the event_bus.py sends an internal "Alert." This
+     alert can trigger the DEAS Scheduler to move the AI model to a cooler/cheaper machine automatically.
+
+  4. Telemetry & Routing (telemetry.py)
+  This tracks the "Logistics" of the network:
+   * It records how long it takes for a message to travel between Node A and Node B.
+   * It measures "Inference Latency" (how many milliseconds until the first word appears).
+
+  ---
+
+  Why is this folder important?
+
+  Without the monitoring folder, CAI would just be a tool that runs AI. With this folder, CAI becomes a
+  Scientific Instrument. It allows you to answer questions like:
+
+   * "Does running this model on Kubernetes use 20% more electricity than running it locally?"
+   * "Which machine in my house is the most energy-efficient for AI?"
+   * "Is the network lag between my PCs slowing down the AI more than the GPU speed is helping it?"
+
+  Summary
+  If the model folder is the Brain, the monitoring folder is the Heart Rate Monitor and Electric Meter
+  that tells you if the brain is working efficiently or wasting power.

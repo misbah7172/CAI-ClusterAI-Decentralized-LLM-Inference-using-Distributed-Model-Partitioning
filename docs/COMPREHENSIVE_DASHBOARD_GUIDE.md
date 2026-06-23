@@ -2,7 +2,7 @@
 Comprehensive Dashboard Quick-Start Guide
 ==========================================
 
-This document explains how to use the new comprehensive KAI dashboard:
+This document explains how to use the new comprehensive CAI dashboard:
 - Live model inference (GUI-based, no CLI)
 - Performance metrics (routing, latency, throughput)
 - KV cache analytics (memory savings, cache hits)
@@ -22,7 +22,7 @@ STEP 1: Validate KV Cache Implementation
 
 Run the KV cache validation script to verify everything is working:
 
-    cd d:\CODE\KAI
+    cd d:\CODE\CAI
     python tests/validate_kv_cache.py
 
 Expected output:
@@ -41,7 +41,7 @@ Option A - Direct Streamlit:
     streamlit run dashboard/comprehensive_dashboard.py
 
 Option B - Via CLI (when implemented):
-    python kai_cli.py dashboard-comprehensive --port 8501
+    python cai_cli.py dashboard-comprehensive --port 8501
 
 The dashboard will open at: http://localhost:8501
 
@@ -368,7 +368,7 @@ Kubernetes Mode:
 
 To deploy to K8s:
   1. Build Docker images: docker-compose build
-  2. Push to registry: docker push your-registry/kai:latest
+  2. Push to registry: docker push your-registry/CAI:latest
   3. Deploy K8s manifests: kubectl apply -f kubernetes/
   4. Access dashboard via port-forward: kubectl port-forward svc/gateway 8501:8501
 
@@ -449,7 +449,7 @@ if __name__ == "__main__":
 - Launch dashboard with CUDA runtime:
   - ./.venv310/Scripts/python -m streamlit run dashboard/comprehensive_dashboard.py
 - Optional launcher command:
-  - python kai_cli_dashboard.py --port 8511 dashboard-pro
+  - python cai_cli_dashboard.py --port 8511 dashboard-pro
 
 ### Live GPU Telemetry (Implemented)
 - Real-time panel now shows:
@@ -487,6 +487,6 @@ if __name__ == "__main__":
 ### Change Artifacts
 - Updated implementation files include:
   - dashboard/comprehensive_dashboard.py
-  - kai_cli_dashboard.py
+  - cai_cli_dashboard.py
   - README.md
 - Documentation synchronized with current implemented state as of this update.

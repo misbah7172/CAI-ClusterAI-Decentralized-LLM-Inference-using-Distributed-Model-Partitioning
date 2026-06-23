@@ -81,7 +81,7 @@ class ResourceDetector:
         Kubernetes namespace (only used in kubernetes mode).
     """
 
-    def __init__(self, mode: str = "local", namespace: str = "kai"):
+    def __init__(self, mode: str = "local", namespace: str = "CAI"):
         if mode not in ("local", "kubernetes"):
             raise ValueError(f"mode must be 'local' or 'kubernetes', got '{mode}'")
         self.mode = mode

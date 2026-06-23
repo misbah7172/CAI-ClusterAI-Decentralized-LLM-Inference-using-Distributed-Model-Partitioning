@@ -1,5 +1,5 @@
 """
-KAI - Comprehensive Performance & Model Management Dashboard
+CAI - Comprehensive Performance & Model Management Dashboard
 ============================================================
 
 Complete unified dashboard showing:
@@ -14,7 +14,7 @@ Run with:
     streamlit run dashboard/comprehensive_dashboard.py
 
 Or via CLI:
-    python kai_cli.py dashboard-pro
+    python cai_cli.py dashboard-pro
 """
 
 import json
@@ -50,12 +50,12 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 st.set_page_config(
-    page_title="KAI Pro Dashboard - Comprehensive Performance & Control",
+    page_title="CAI Pro Dashboard - Comprehensive Performance & Control",
     page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        "About": "KAI Comprehensive Dashboard v2.0 - Real-time Performance Monitoring & Control"
+        "About": "CAI Comprehensive Dashboard v2.0 - Real-time Performance Monitoring & Control"
     }
 )
 
@@ -123,7 +123,7 @@ MODEL_SIZES_MB = {
     "meta-llama/Llama-2-70b-hf": 280000,
 }
 
-LOGS_DIR = Path(os.environ.get("KAI_LOGS_DIR", "logs"))
+LOGS_DIR = Path(os.environ.get("CAI_LOGS_DIR", "logs"))
 METRICS_CACHE_FILE = LOGS_DIR / "current_metrics.json"
 
 # Cross-run low-level KV context for token-prefix reuse accounting.
@@ -335,7 +335,7 @@ def load_kv_cache_stats() -> Dict[str, Any]:
 def load_latest_experiment_data() -> Dict[str, Any]:
     """Load the latest experiment data from logs directory."""
     try:
-        logs_dir = Path(os.environ.get("KAI_LOGS_DIR", "logs"))
+        logs_dir = Path(os.environ.get("CAI_LOGS_DIR", "logs"))
         if not logs_dir.exists():
             return {}
         
@@ -1183,7 +1183,7 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
         use_kv_cache = params["use_kv_cache"]
         enforce_gpu = bool(params.get("enforce_gpu", False))
         cache_precision = str(params.get("cache_precision", "INT8"))
-        run_mode = str(params.get("run_mode", "kai"))
+        run_mode = str(params.get("run_mode", "CAI"))
 
         baseline_mode = run_mode == "baseline"
         if baseline_mode:
@@ -1276,7 +1276,7 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
             )
         runtime_notes.extend(load_notes)
         if baseline_mode:
-            runtime_notes.append("Baseline mode active: KAI KV reuse disabled.")
+            runtime_notes.append("Baseline mode active: CAI KV reuse disabled.")
         else:
             runtime_notes.append("Model runtime cache hit." if cache_hit else "Model runtime cache miss.")
 
@@ -1350,7 +1350,7 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
         prompt_past_for_cache = None
         allow_low_level_kv = bool(use_kv_cache and not baseline_mode and not offload_enabled)
         if use_kv_cache and not allow_low_level_kv and not baseline_mode:
-            runtime_notes.append("KAI KV prefix reuse disabled for offloaded model; using standard cache-enabled generation.")
+            runtime_notes.append("CAI KV prefix reuse disabled for offloaded model; using standard cache-enabled generation.")
 
         with torch.no_grad():
             if allow_low_level_kv:
@@ -1490,7 +1490,7 @@ def _run_generation_worker(params: Dict[str, Any], stop_event: threading.Event, 
 # SIDEBAR NAVIGATION
 # ============================================================================
 
-st.sidebar.title("KAI Pro Dashboard")
+st.sidebar.title("CAI Pro Dashboard")
 st.sidebar.markdown("---")
 
 page = st.sidebar.radio(
@@ -1519,17 +1519,17 @@ with col2:
     st.metric("Models", "5+", delta="Available")
 
 st.sidebar.markdown("---")
-st.sidebar.caption("KAI v2.0 | Comprehensive Dashboard")
+st.sidebar.caption("CAI v2.0 | Comprehensive Dashboard")
 
 # ============================================================================
 # Page 1: HOME
 # ============================================================================
 
 def page_home():
-    st.title(" KAI - Comprehensive Performance Dashboard")
+    st.title(" CAI - Comprehensive Performance Dashboard")
     
     st.markdown("""
-    Welcome to **KAI Pro Dashboard** - Real-time control and monitoring for distributed AI inference.
+    Welcome to **CAI Pro Dashboard** - Real-time control and monitoring for distributed AI inference.
     
     ### Key Features:
     -  **Live Model Inference** — Run large models without command line
@@ -1750,7 +1750,7 @@ def page_live_inference():
                     run_entry = {
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "status": "completed",
-                        "run_mode": run_metrics.get("run_mode", "kai"),
+                        "run_mode": run_metrics.get("run_mode", "CAI"),
                         "prompt": prompt_text,
                         "output": full_text,
                         "completion": completion_text,
@@ -1832,7 +1832,7 @@ def page_live_inference():
                     run_entry = {
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "status": "stopped",
-                        "run_mode": run_metrics.get("run_mode", "kai"),
+                        "run_mode": run_metrics.get("run_mode", "CAI"),
                         "prompt": prompt_text,
                         "output": full_text,
                         "completion": completion_text,
@@ -1995,7 +1995,7 @@ def page_live_inference():
         if 'offload' not in locals():
             offload = True
         if 'offload_dir' not in locals():
-            offload_dir = "/tmp/kai_swap"
+            offload_dir = "/tmp/cai_swap"
 
         if st.button("Preload Model (Warmup)"):
             # Kick off background warmup that reuses the same cache mechanism
@@ -2068,13 +2068,13 @@ def page_live_inference():
         
         with col_adv3:
             dtype = st.selectbox("Model Dtype", ["float16", "float32"])
-            offload_dir = st.text_input("Offload Dir", "/tmp/kai_swap")
+            offload_dir = st.text_input("Offload Dir", "/tmp/cai_swap")
 
         run_mode = st.selectbox(
             "Run Mode",
-            ["kai", "baseline"],
+            ["CAI", "baseline"],
             index=0,
-            help="kai uses KAI runtime cache and KV prefix reuse; baseline uses the same GPU with those optimizations disabled.",
+            help="CAI uses CAI runtime cache and KV prefix reuse; baseline uses the same GPU with those optimizations disabled.",
             key="inference_run_mode",
         )
     
@@ -2237,7 +2237,7 @@ def page_live_inference():
 
         if metrics.get("kv_runtime_mode") == "offload_safe_generate":
             st.warning(
-                "KAI is running in offload-safe mode: model caching is active, but low-level KV prefix reuse is disabled for offloaded weights."
+                "CAI is running in offload-safe mode: model caching is active, but low-level KV prefix reuse is disabled for offloaded weights."
             )
 
         # Energy metrics: prefer model_metrics but fall back to last saved run
@@ -2281,14 +2281,14 @@ def page_live_inference():
             options=list(range(len(history))),
             index=len(history) - 1,
             format_func=lambda i: (
-                f"{i+1}. {history[i].get('timestamp', '')} | {history[i].get('run_mode', 'kai')} | {history[i].get('status', '')} | "
+                f"{i+1}. {history[i].get('timestamp', '')} | {history[i].get('run_mode', 'CAI')} | {history[i].get('status', '')} | "
                 f"{history[i].get('tokens_generated', 0)} tok"
             ),
             key="run_history_select",
         )
         selected = history[selected_idx]
         st.caption(
-            f"Mode: {selected.get('run_mode', 'kai').upper()} | Model: {selected.get('model','N/A')} | Device: {selected.get('device','N/A')} | "
+            f"Mode: {selected.get('run_mode', 'CAI').upper()} | Model: {selected.get('model','N/A')} | Device: {selected.get('device','N/A')} | "
             f"KV: {'ON' if selected.get('kv_cache_enabled') else 'OFF'} ({selected.get('cache_precision','N/A')})"
         )
         st.caption(f"KV runtime mode: {selected.get('kv_runtime_mode', 'N/A')}")
@@ -2314,21 +2314,21 @@ def page_live_inference():
             key=f"history_output_box_{selected_idx}",
         )
 
-        kai_runs = [r for r in history if str(r.get("run_mode", "kai")).lower() == "kai"]
-        baseline_runs = [r for r in history if str(r.get("run_mode", "kai")).lower() == "baseline"]
-        if kai_runs and baseline_runs:
-            latest_kai = kai_runs[-1]
+        cai_runs = [r for r in history if str(r.get("run_mode", "CAI")).lower() == "CAI"]
+        baseline_runs = [r for r in history if str(r.get("run_mode", "CAI")).lower() == "baseline"]
+        if cai_runs and baseline_runs:
+            latest_cai = cai_runs[-1]
             latest_baseline = baseline_runs[-1]
 
             st.divider()
-            st.subheader(" KAI vs Baseline Compare")
+            st.subheader(" CAI vs Baseline Compare")
             compare_col1, compare_col2 = st.columns(2)
             with compare_col1:
-                st.markdown("**Latest KAI Run**")
-                st.metric("Duration", f"{float(latest_kai.get('duration_sec', 0) or 0):.2f}s")
-                st.metric("Tokens/sec", f"{float(latest_kai.get('tokens_per_sec', 0) or 0):.2f}")
-                st.metric("Energy (Wh)", f"{float(latest_kai.get('energy_wh', 0) or 0):.4f}")
-                st.metric("Tokens/Wh", f"{float(latest_kai.get('tokens_per_wh', 0) or 0):.2f}" if latest_kai.get('tokens_per_wh') else "N/A")
+                st.markdown("**Latest CAI Run**")
+                st.metric("Duration", f"{float(latest_cai.get('duration_sec', 0) or 0):.2f}s")
+                st.metric("Tokens/sec", f"{float(latest_cai.get('tokens_per_sec', 0) or 0):.2f}")
+                st.metric("Energy (Wh)", f"{float(latest_cai.get('energy_wh', 0) or 0):.4f}")
+                st.metric("Tokens/Wh", f"{float(latest_cai.get('tokens_per_wh', 0) or 0):.2f}" if latest_cai.get('tokens_per_wh') else "N/A")
             with compare_col2:
                 st.markdown("**Latest Baseline Run**")
                 st.metric("Duration", f"{float(latest_baseline.get('duration_sec', 0) or 0):.2f}s")
@@ -2345,13 +2345,13 @@ def page_live_inference():
                     "Avg Power (W)": latest_baseline.get("avg_power_w", 0),
                 },
                 {
-                    "Duration (sec)": latest_kai.get("duration_sec", 0),
-                    "Tokens/sec": latest_kai.get("tokens_per_sec", 0),
-                    "Energy (Wh)": latest_kai.get("energy_wh", 0),
-                    "Tokens/Wh": latest_kai.get("tokens_per_wh", 0) or 0,
-                    "Avg Power (W)": latest_kai.get("avg_power_w", 0),
+                    "Duration (sec)": latest_cai.get("duration_sec", 0),
+                    "Tokens/sec": latest_cai.get("tokens_per_sec", 0),
+                    "Energy (Wh)": latest_cai.get("energy_wh", 0),
+                    "Tokens/Wh": latest_cai.get("tokens_per_wh", 0) or 0,
+                    "Avg Power (W)": latest_cai.get("avg_power_w", 0),
                 },
-                "Latest Baseline vs KAI",
+                "Latest Baseline vs CAI",
             )
             st.plotly_chart(comp_fig, width="stretch", config={"responsive": True})
     else:
@@ -2407,21 +2407,21 @@ def _node_to_worker_profile(node: Dict[str, Any]):
     )
 
 
-def _get_kai_controller():
+def _get_cai_controller():
     """Create or reuse the Kubernetes controller when the package is available."""
-    controller = st.session_state.get("kai_controller")
+    controller = st.session_state.get("cai_controller")
     if controller is not None:
         return controller
 
     try:
-        from kubernetes.controller import KAIController
+        from kubernetes.controller import CAIController
 
-        controller = KAIController()
-        st.session_state["kai_controller"] = controller
-        st.session_state.pop("kai_controller_error", None)
+        controller = CAIController()
+        st.session_state["cai_controller"] = controller
+        st.session_state.pop("cai_controller_error", None)
         return controller
     except Exception as exc:
-        st.session_state["kai_controller_error"] = str(exc)
+        st.session_state["cai_controller_error"] = str(exc)
         return None
 
 # ============================================================================
@@ -3015,7 +3015,7 @@ def page_comparisons_benchmarks():
             curl -sfL https://get.k3s.io | sh -
             
             # Get cluster token and join from main machine:
-            python kai_cli.py benchmark --mode kubernetes --num-chunks 3 --gateway-url <secondary-ip>:5000
+            python cai_cli.py benchmark --mode kubernetes --num-chunks 3 --gateway-url <secondary-ip>:5000
             ```
             
             Once multi-node data is collected, this table will automatically show:
@@ -3030,7 +3030,7 @@ def page_comparisons_benchmarks():
             
             Run a model inference first to generate baseline metrics:
             ```bash
-            python kai_cli.py run --model microsoft/phi-2 --prompt "Your prompt here" --device cuda:0
+            python cai_cli.py run --model microsoft/phi-2 --prompt "Your prompt here" --device cuda:0
             ```
             """)
         
@@ -3163,12 +3163,12 @@ def page_comparisons_benchmarks():
 def _kubectl_json(args: List[str], timeout: int = 15) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     """Run kubectl against the WSL K3s cluster and return parsed JSON."""
     commands: List[List[str]] = []
-    custom = os.environ.get("KAI_KUBECTL_COMMAND", "").strip()
+    custom = os.environ.get("CAI_KUBECTL_COMMAND", "").strip()
     if custom:
         commands.append(custom.split() + args + ["-o", "json"])
 
     if os.name == "nt":
-        distro = os.environ.get("KAI_WSL_DISTRO", "Ubuntu-22.04")
+        distro = os.environ.get("CAI_WSL_DISTRO", "Ubuntu-22.04")
         commands.append(["wsl", "-d", distro, "--", "sudo", "k3s", "kubectl", *args, "-o", "json"])
 
     commands.append(["kubectl", *args, "-o", "json"])
@@ -3253,7 +3253,7 @@ def load_live_cluster_status() -> Dict[str, Any]:
 
     pods = (pods_json or {}).get("items", [])
     plugin_by_node: Dict[str, Dict[str, Any]] = {}
-    kai_pods: List[Dict[str, Any]] = []
+    cai_pods: List[Dict[str, Any]] = []
     for pod in pods:
         metadata = pod.get("metadata", {}) or {}
         spec = pod.get("spec", {}) or {}
@@ -3272,8 +3272,8 @@ def load_live_cluster_status() -> Dict[str, Any]:
         }
         if labels.get("name") == "nvidia-device-plugin-ds" or "nvidia-device-plugin" in name:
             plugin_by_node[node_name] = row
-        if namespace == "kai" or labels.get("app") == "kai":
-            kai_pods.append(row)
+        if namespace == "CAI" or labels.get("app") == "CAI":
+            cai_pods.append(row)
 
     node_rows: List[Dict[str, Any]] = []
     for node in (nodes_json or {}).get("items", []):
@@ -3312,7 +3312,7 @@ def load_live_cluster_status() -> Dict[str, Any]:
         "available": True,
         "error": pod_error,
         "nodes": node_rows,
-        "pods": kai_pods,
+        "pods": cai_pods,
         "plugin_pods": list(plugin_by_node.values()),
         "queried_at": queried_at,
     }
@@ -3320,7 +3320,7 @@ def load_live_cluster_status() -> Dict[str, Any]:
 
 def page_multi_node_cluster():
     st.title(" Multi-Node Cluster")
-    st.markdown("Live view of K3s workers, readiness, GPU registration, and KAI pods.")
+    st.markdown("Live view of K3s workers, readiness, GPU registration, and CAI pods.")
 
     refresh_col, auto_col, note_col = st.columns([1, 1, 2])
     with refresh_col:
@@ -3356,7 +3356,7 @@ def page_multi_node_cluster():
         st.metric("Cluster State", "Ready" if node_count and ready_count == node_count else "Degraded")
 
     if node_count and ready_count != node_count:
-        st.warning("One or more nodes are not Ready. KAI multi-node workloads should wait until required workers are Ready.")
+        st.warning("One or more nodes are not Ready. CAI multi-node workloads should wait until required workers are Ready.")
         st.info("Kubernetes keeps disconnected workers in the node list as `Unknown` or `NotReady` until the node is deleted; the Heartbeat Age column shows whether the node is stale.")
     if gpu_nodes == 0:
         st.warning("No Kubernetes node currently advertises `nvidia.com/gpu`; GPU chunk pods will stay pending.")
@@ -3374,12 +3374,12 @@ def page_multi_node_cluster():
     else:
         st.info("NVIDIA device plugin is not scheduled.")
 
-    st.subheader("KAI Workload Pods")
-    kai_pods = cluster_status.get("pods", [])
-    if kai_pods:
-        st.dataframe(pd.DataFrame(kai_pods), width="stretch", hide_index=True)
+    st.subheader("CAI Workload Pods")
+    cai_pods = cluster_status.get("pods", [])
+    if cai_pods:
+        st.dataframe(pd.DataFrame(cai_pods), width="stretch", hide_index=True)
     else:
-        st.info("No KAI workload pods are deployed yet.")
+        st.info("No CAI workload pods are deployed yet.")
 
     with st.expander("Troubleshooting Commands"):
         st.code(
@@ -3578,9 +3578,9 @@ def page_system_config():
             elif control_mode == "DEAS":
                 st.subheader("DEAS Energy Rebalance")
                 st.caption("DEAS watches energy/latency signals and can rebalance the cluster when a worker becomes inefficient.")
-                controller = _get_kai_controller()
+                controller = _get_cai_controller()
                 if controller is None:
-                    st.info(st.session_state.get("kai_controller_error", "Kubernetes controller is unavailable in this environment."))
+                    st.info(st.session_state.get("cai_controller_error", "Kubernetes controller is unavailable in this environment."))
                 else:
                     if st.button("Refresh Pod Status", key="deas_refresh_status_btn"):
                         st.session_state["deas_status"] = controller.get_status()

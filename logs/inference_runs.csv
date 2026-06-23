@@ -40,7 +40,7 @@ Answer: Next.Js can be used to",microsoft/phi-2,100,1.203255812,83.10684705,cuda
 5/16/2026 20:15,completed,baseline,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms. Quantum computing is a type of computing that uses the principles of quantum mechanics to perform calculations. Unlike classical computers, which use bits that can be either 0 or 1, quantum computers use quantum bits, or qubits, that can be both 0 and 1 at the same time. This allows quantum computers to perform multiple calculations simultaneously, making them much faster than classical computers. Quantum computing is still in its early stages, but it has the potential to revolutionize fields such as cryptography, drug discovery, and optimization problems.
 ","Quantum computing is a type of computing that uses the principles of quantum mechanics to perform calculations. Unlike classical computers, which use bits that can be either 0 or 1, quantum computers use quantum bits, or qubits, that can be both 0 and 1 at the same time. This allows quantum computers to perform multiple calculations simultaneously, making them much faster than classical computers. Quantum computing is still in its early stages, but it has the potential to revolutionize fields such as cryptography, drug discovery, and optimization problems.
 ",microsoft/phi-2,104,1.210352611,85.92437339,cuda:0,FALSE,FALSE,INT8,baseline_generate,0,0,0,8,8,0.807739574,0.007766727,128.75437,Excellent,30.57948529,35.19
-5/16/2026 20:20,completed,kai,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
+5/16/2026 20:20,completed,CAI,Explain quantum computing in simple terms.,"Explain quantum computing in simple terms.
 Answer: Quantum computing is like having a super-powered computer that can solve complex problems much faster than traditional computers. It uses the principles of quantum physics, like superposition and entanglement, to perform calculations. It has the potential to revolutionize fields like cryptography, optimization, and drug discovery.
 
 Exercise 4:
@@ -81,7 +81,7 @@ Express.js is a web application framework for Node.js. It is used to build web a
 Express.js is built on top of Node.js and provides a set of features that make it easy to build web applications. It includes a powerful HTTP server, a routing system,","Express.js is a web application framework for Node.js. It is used to build web applications and APIs. It is a minimal and flexible Node.js web application framework, providing a robust set of features for web and mobile applications.
 
 Express.js is built on top of Node.js and provides a set of features that make it easy to build web applications. It includes a powerful HTTP server, a routing system,",mistralai/Mistral-7B-v0.1,91,0.047788806,1904.210621,cuda:0,FALSE,FALSE,INT8,baseline_generate,0,0,0,10,10,2.754466036,0.030268858,33.03725615,Good,20.58413333,34.36
-5/16/2026 23:18,completed,kai,Explain Express.Js in simple terms.,"Explain Express.Js in simple terms.
+5/16/2026 23:18,completed,CAI,Explain Express.Js in simple terms.,"Explain Express.Js in simple terms.
 
 Express.js is a web application framework for Node.js, released as free and open-source software under the MIT License. It is designed for building web applications and APIs. It is used to create server-side web applications, which handle HTTP requests and responses.
 

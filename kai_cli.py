@@ -1,5 +1,5 @@
 """
-KAI CLI — Main entry point for distributed LLM inference on low-end hardware.
+CAI CLI — Main entry point for distributed LLM inference on low-end hardware.
 
 Run large AI models across a Kubernetes cluster of budget PCs. Each node
 loads only the layers it is responsible for, so no single machine needs
@@ -7,35 +7,35 @@ enough VRAM/RAM for the full model.
 
 Subcommands::
 
-    kai run           — Download a model, partition across cluster, generate text.
-    kai scan          — Detect cluster resources and show capabilities.
-    kai partition     — Preview how a model would be split (dry-run).
-    kai benchmark     — Run the original energy benchmarking workflow.
-    kai dashboard     — Launch the Streamlit dashboard.
-    kai build         — Build Docker images for chunk/gateway/monitor.
-    kai prepare       — Download model, chunk weights, save for K8s deployment.
+    CAI run           — Download a model, partition across cluster, generate text.
+    CAI scan          — Detect cluster resources and show capabilities.
+    CAI partition     — Preview how a model would be split (dry-run).
+    CAI benchmark     — Run the original energy benchmarking workflow.
+    CAI dashboard     — Launch the Streamlit dashboard.
+    CAI build         — Build Docker images for chunk/gateway/monitor.
+    CAI prepare       — Download model, chunk weights, save for K8s deployment.
 
 Next-Generation Features::
 
-    kai autotune      — Auto-tune configuration for optimal performance.
-    kai speculative   — Run with speculative decoding for faster inference.
-    kai hybrid        — Run with hybrid parallelism (tensor + pipeline).
-    kai placement     — Generate intelligent placement plan.
-    kai energy-loop   — Start the energy feedback control loop.
-    kai fault-tolerant — Run with fault-tolerant pipeline.
-    kai plugins       — List and manage plugins.
+    CAI autotune      — Auto-tune configuration for optimal performance.
+    CAI speculative   — Run with speculative decoding for faster inference.
+    CAI hybrid        — Run with hybrid parallelism (tensor + pipeline).
+    CAI placement     — Generate intelligent placement plan.
+    CAI energy-loop   — Start the energy feedback control loop.
+    CAI fault-tolerant — Run with fault-tolerant pipeline.
+    CAI plugins       — List and manage plugins.
 
 Usage::
 
-    python kai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Hello" --max-tokens 50
-    python kai_cli.py scan
-    python kai_cli.py partition --model microsoft/phi-2 --num-nodes 3
-    python kai_cli.py benchmark --model transformer --mode local
-    python kai_cli.py dashboard
-    python kai_cli.py build --tag kai:latest
-    python kai_cli.py prepare --model sshleifer/tiny-gpt2 --num-chunks 3
-    python kai_cli.py autotune --model sshleifer/tiny-gpt2 --objective energy
-    python kai_cli.py speculative --model sshleifer/tiny-gpt2 --prompt "Hello"
+    python cai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Hello" --max-tokens 50
+    python cai_cli.py scan
+    python cai_cli.py partition --model microsoft/phi-2 --num-nodes 3
+    python cai_cli.py benchmark --model transformer --mode local
+    python cai_cli.py dashboard
+    python cai_cli.py build --tag CAI:latest
+    python cai_cli.py prepare --model sshleifer/tiny-gpt2 --num-chunks 3
+    python cai_cli.py autotune --model sshleifer/tiny-gpt2 --objective energy
+    python cai_cli.py speculative --model sshleifer/tiny-gpt2 --prompt "Hello"
 """
 
 import argparse
@@ -47,7 +47,7 @@ import sys
 
 import torch
 
-logger = logging.getLogger("kai")
+logger = logging.getLogger("CAI")
 
 
 def cmd_run(args):
@@ -59,9 +59,9 @@ def cmd_run(args):
 
     quantize = getattr(args, "quantize", None)
     if quantize:
-        print(f"[KAI] Quantization requested: {quantize}")
+        print(f"[CAI] Quantization requested: {quantize}")
 
-    print(f"[KAI] Loading model: {args.model}")
+    print(f"[CAI] Loading model: {args.model}")
     loader = HFModelLoader(
         args.model,
         dtype=args.dtype,
@@ -73,21 +73,21 @@ def cmd_run(args):
     try:
         loader.validate_architecture()
     except ValueError as e:
-        print(f"[KAI] Error: {e}")
+        print(f"[CAI] Error: {e}")
         sys.exit(1)
 
     # Get model info
     size_est = loader.get_model_size_estimate()
     dtype_key = "float16_mb" if args.dtype in ("float16", "fp16") else "float32_mb"
     est_mb = size_est.get(dtype_key, size_est["float32_mb"])
-    print(f"[KAI] Model: ~{size_est['params_millions']:.0f}M params, ~{est_mb:.0f} MB ({args.dtype})")
+    print(f"[CAI] Model: ~{size_est['params_millions']:.0f}M params, ~{est_mb:.0f} MB ({args.dtype})")
 
     # Scan resources
-    print("[KAI] Scanning resources...")
+    print("[CAI] Scanning resources...")
     detector = ResourceDetector(mode=args.resource_mode)
     nodes = detector.scan()
     total_usable = sum(n.usable_memory_mb for n in nodes)
-    print(f"[KAI] Cluster: {len(nodes)} node(s), {total_usable:.0f} MB usable")
+    print(f"[CAI] Cluster: {len(nodes)} node(s), {total_usable:.0f} MB usable")
 
     # For single-node runs, use Transformers/Accelerate offload directly.
     # This path is more robust for very large models than the experimental
@@ -98,7 +98,7 @@ def cmd_run(args):
 
     # Create chunks
     num_chunks = args.num_chunks or len(nodes)
-    print(f"[KAI] Partitioning model into {num_chunks} chunks...")
+    print(f"[CAI] Partitioning model into {num_chunks} chunks...")
     chunker = LayerChunker(loader)
 
     prefetch_engine = None
@@ -117,7 +117,7 @@ def cmd_run(args):
                 gpu_budget_mb = 512.0  # fallback for CPU-only
         ram_budget_mb = sum(n.usable_memory_mb for n in nodes) * 0.5
 
-        print(f"[KAI] Offloading enabled: GPU={gpu_budget_mb:.0f} MB, RAM={ram_budget_mb:.0f} MB, disk={args.disk_swap_dir}")
+        print(f"[CAI] Offloading enabled: GPU={gpu_budget_mb:.0f} MB, RAM={ram_budget_mb:.0f} MB, disk={args.disk_swap_dir}")
         chunks, weight_manager, prefetch_engine = chunker.create_offloaded_chunks(
             gpu_budget_mb=gpu_budget_mb,
             ram_budget_mb=ram_budget_mb,
@@ -134,7 +134,7 @@ def cmd_run(args):
         print(f"  Chunk {c.chunk_id}: {c.layer_names} (~{c.estimate_memory_mb():.0f} MB)")
 
     # Load real weights into chunks
-    print("[KAI] Loading model weights...")
+    print("[CAI] Loading model weights...")
     if not getattr(args, "offload", False):
         _load_real_weights(loader, chunks, args.device, quantize=quantize)
 
@@ -146,7 +146,7 @@ def cmd_run(args):
         weight_manager=weight_manager,
     )
 
-    print(f"[KAI] Generating (max_tokens={args.max_tokens}, temp={args.temperature})...")
+    print(f"[CAI] Generating (max_tokens={args.max_tokens}, temp={args.temperature})...")
     print("---")
 
     if args.stream:
@@ -172,7 +172,7 @@ def cmd_run(args):
         print(result)
         print("---")
 
-    print("[KAI] Done.")
+    print("[CAI] Done.")
 
 
 def _run_single_node_offload(args, loader, nodes, quantize=None):
@@ -195,7 +195,7 @@ def _run_single_node_offload(args, loader, nodes, quantize=None):
     os.makedirs(args.disk_swap_dir, exist_ok=True)
 
     print(
-        "[KAI] Single-node offload backend: "
+        "[CAI] Single-node offload backend: "
         f"GPU={gpu_budget_mb:.0f} MB, RAM={ram_budget_mb:.0f} MB, "
         f"disk={args.disk_swap_dir}"
     )
@@ -242,7 +242,7 @@ def _run_single_node_offload(args, loader, nodes, quantize=None):
         except Exception as e:
             logger.warning("bitsandbytes quantization unavailable: %s", e)
 
-    print("[KAI] Loading model with Accelerate offload...")
+    print("[CAI] Loading model with Accelerate offload...")
     # Try to reduce allocator fragmentation and clear cached memory first.
     try:
         os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
@@ -261,7 +261,7 @@ def _run_single_node_offload(args, loader, nodes, quantize=None):
     input_device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     inputs = {k: v.to(input_device) for k, v in inputs.items()}
 
-    print(f"[KAI] Generating (max_tokens={args.max_tokens}, temp={args.temperature})...")
+    print(f"[CAI] Generating (max_tokens={args.max_tokens}, temp={args.temperature})...")
     print("---")
     with torch.no_grad():
         output_ids = model.generate(
@@ -279,14 +279,14 @@ def _run_single_node_offload(args, loader, nodes, quantize=None):
     text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
     print(text)
     print("---")
-    print("[KAI] Done.")
+    print("[CAI] Done.")
 
 
 def cmd_scan(args):
     """Scan cluster resources."""
     from model.resource_detector import ResourceDetector
 
-    print(f"[KAI] Scanning resources (mode={args.mode})...")
+    print(f"[CAI] Scanning resources (mode={args.mode})...")
     detector = ResourceDetector(mode=args.mode)
     summary = detector.scan_summary()
 
@@ -328,7 +328,7 @@ def cmd_partition(args):
     from model.resource_detector import ResourceDetector, NodeInfo
     from model.auto_partitioner import AutoPartitioner
 
-    print(f"[KAI] Loading model config: {args.model}")
+    print(f"[CAI] Loading model config: {args.model}")
     loader = HFModelLoader(
         args.model,
         dtype=args.dtype,
@@ -382,7 +382,7 @@ def cmd_benchmark(args):
     enable_deas = getattr(args, "enable_deas", False)
     deas_cooldown = getattr(args, "deas_cooldown", 30.0)
     if hf_model:
-        print(f"[KAI] Running HF model benchmark: mode={args.mode}, model={hf_model}")
+        print(f"[CAI] Running HF model benchmark: mode={args.mode}, model={hf_model}")
         results = run_experiment(
             mode=args.mode,
             model_type="transformer",
@@ -396,7 +396,7 @@ def cmd_benchmark(args):
             deas_cooldown=deas_cooldown,
         )
     else:
-        print(f"[KAI] Running benchmark: mode={args.mode}, model={args.model}")
+        print(f"[CAI] Running benchmark: mode={args.mode}, model={args.model}")
         results = run_experiment(
             mode=args.mode,
             model_type=args.model,
@@ -408,13 +408,13 @@ def cmd_benchmark(args):
             enable_deas=enable_deas,
             deas_cooldown=deas_cooldown,
         )
-    print("[KAI] Benchmark complete. Results saved to:", args.output_dir)
+    print("[CAI] Benchmark complete. Results saved to:", args.output_dir)
 
 
 def cmd_dashboard(args):
     """Launch the comprehensive Streamlit dashboard."""
     app_file = "dashboard/comprehensive_dashboard.py"
-    print(f"[KAI] Launching Comprehensive Dashboard ({os.path.basename(app_file)})...")
+    print(f"[CAI] Launching Comprehensive Dashboard ({os.path.basename(app_file)})...")
     cmd = [
         sys.executable, "-m", "streamlit", "run", app_file,
         "--server.headless", "true",
@@ -424,7 +424,7 @@ def cmd_dashboard(args):
 
 
 def cmd_build(args):
-    """Build Docker images for KAI components."""
+    """Build Docker images for CAI components."""
     project_root = os.path.dirname(os.path.abspath(__file__))
     tag = args.tag
     images = {
@@ -434,8 +434,8 @@ def cmd_build(args):
     }
 
     for name, dockerfile in images.items():
-        image_tag = f"{tag}-{name}" if tag != "kai:latest" else f"kai-{name}:latest"
-        print(f"[KAI] Building {name} image: {image_tag}")
+        image_tag = f"{tag}-{name}" if tag != "CAI:latest" else f"CAI-{name}:latest"
+        print(f"[CAI] Building {name} image: {image_tag}")
         cmd = [
             "docker", "build",
             "-f", dockerfile,
@@ -444,24 +444,24 @@ def cmd_build(args):
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
-            print(f"[KAI] ERROR building {name}:")
+            print(f"[CAI] ERROR building {name}:")
             print(result.stderr)
             sys.exit(1)
-        print(f"[KAI] Built: {image_tag}")
+        print(f"[CAI] Built: {image_tag}")
 
         if args.push:
-            print(f"[KAI] Pushing {image_tag}...")
+            print(f"[CAI] Pushing {image_tag}...")
             push_result = subprocess.run(
                 ["docker", "push", image_tag],
                 capture_output=True, text=True,
             )
             if push_result.returncode != 0:
-                print(f"[KAI] ERROR pushing {name}:")
+                print(f"[CAI] ERROR pushing {name}:")
                 print(push_result.stderr)
                 sys.exit(1)
-            print(f"[KAI] Pushed: {image_tag}")
+            print(f"[CAI] Pushed: {image_tag}")
 
-    print("[KAI] All images built successfully.")
+    print("[CAI] All images built successfully.")
 
 
 def cmd_autotune(args):
@@ -470,9 +470,9 @@ def cmd_autotune(args):
     from model.hf_loader import HFModelLoader
     from model.resource_detector import ResourceDetector
 
-    print(f"[KAI] Starting auto-tuning for: {args.model}")
-    print(f"[KAI] Objective: {args.objective}")
-    print(f"[KAI] Max trials: {args.max_trials}")
+    print(f"[CAI] Starting auto-tuning for: {args.model}")
+    print(f"[CAI] Objective: {args.objective}")
+    print(f"[CAI] Max trials: {args.max_trials}")
 
     loader = HFModelLoader(
         args.model,
@@ -514,7 +514,7 @@ def cmd_autotune(args):
     print()
     print(result.summary())
     print()
-    print(f"[KAI] Results saved to: {args.output_dir}")
+    print(f"[CAI] Results saved to: {args.output_dir}")
 
 
 def cmd_speculative(args):
@@ -524,7 +524,7 @@ def cmd_speculative(args):
     from model.resource_detector import ResourceDetector
     from model.speculative_decoder import AdaptiveSpeculativeDecoder, VerificationMode
 
-    print(f"[KAI] Loading main model: {args.model}")
+    print(f"[CAI] Loading main model: {args.model}")
     loader = HFModelLoader(
         args.model,
         dtype=args.dtype,
@@ -537,17 +537,17 @@ def cmd_speculative(args):
     nodes = detector.scan()
     num_chunks = args.num_chunks or len(nodes)
 
-    print(f"[KAI] Partitioning into {num_chunks} chunks...")
+    print(f"[CAI] Partitioning into {num_chunks} chunks...")
     chunker = LayerChunker(loader)
     chunks = chunker.create_chunks(num_chunks)
 
-    print("[KAI] Loading weights...")
+    print("[CAI] Loading weights...")
     _load_real_weights(loader, chunks, args.device, quantize=args.quantize)
 
     # Load draft model if specified
     draft_model = None
     if args.draft_model:
-        print(f"[KAI] Loading draft model: {args.draft_model}")
+        print(f"[CAI] Loading draft model: {args.draft_model}")
         from transformers import AutoModelForCausalLM
         draft_model = AutoModelForCausalLM.from_pretrained(
             args.draft_model,
@@ -575,7 +575,7 @@ def cmd_speculative(args):
         device=args.device,
     )
 
-    print(f"[KAI] Speculative generation (speculation_length={args.speculation_length})...")
+    print(f"[CAI] Speculative generation (speculation_length={args.speculation_length})...")
     print("---")
 
     tokens = speculative.generate(
@@ -589,9 +589,9 @@ def cmd_speculative(args):
     print("---")
 
     stats = speculative.get_stats()
-    print(f"[KAI] Acceptance rate: {stats['acceptance_rate']:.1%}")
-    print(f"[KAI] Avg speculation length: {stats['avg_speculation_length']:.1f}")
-    print("[KAI] Done.")
+    print(f"[CAI] Acceptance rate: {stats['acceptance_rate']:.1%}")
+    print(f"[CAI] Avg speculation length: {stats['avg_speculation_length']:.1f}")
+    print("[CAI] Done.")
 
 
 def cmd_hybrid(args):
@@ -601,7 +601,7 @@ def cmd_hybrid(args):
     from model.resource_detector import ResourceDetector
     from model.hybrid_parallelism import HybridParallelismEngine, ParallelismMode
 
-    print(f"[KAI] Loading model: {args.model}")
+    print(f"[CAI] Loading model: {args.model}")
     loader = HFModelLoader(
         args.model,
         dtype=args.dtype,
@@ -612,7 +612,7 @@ def cmd_hybrid(args):
     detector = ResourceDetector(mode=args.resource_mode)
     nodes = detector.scan()
 
-    print(f"[KAI] Setting up hybrid parallelism (mode={args.mode})...")
+    print(f"[CAI] Setting up hybrid parallelism (mode={args.mode})...")
 
     mode_map = {
         "auto": None,  # Auto-detect
@@ -631,7 +631,7 @@ def cmd_hybrid(args):
     tokenizer = loader.get_tokenizer()
     input_ids = tokenizer.encode(args.prompt, return_tensors="pt")
 
-    print("[KAI] Running inference...")
+    print("[CAI] Running inference...")
     print("---")
 
     output = engine.forward(input_ids.to(args.device))
@@ -640,8 +640,8 @@ def cmd_hybrid(args):
     print(result)
     print("---")
 
-    print(f"[KAI] Parallelism mode used: {engine.mode.value}")
-    print("[KAI] Done.")
+    print(f"[CAI] Parallelism mode used: {engine.mode.value}")
+    print("[CAI] Done.")
 
 
 def cmd_placement(args):
@@ -650,7 +650,7 @@ def cmd_placement(args):
     from model.resource_detector import ResourceDetector
     from model.intelligent_placement import IntelligentPlacementEngine, OptimizationObjective
 
-    print(f"[KAI] Loading model config: {args.model}")
+    print(f"[CAI] Loading model config: {args.model}")
     loader = HFModelLoader(
         args.model,
         dtype=args.dtype,
@@ -658,7 +658,7 @@ def cmd_placement(args):
         token=args.token,
     )
 
-    print(f"[KAI] Scanning resources (mode={args.resource_mode})...")
+    print(f"[CAI] Scanning resources (mode={args.resource_mode})...")
     detector = ResourceDetector(mode=args.resource_mode)
     nodes = detector.scan()
 
@@ -674,7 +674,7 @@ def cmd_placement(args):
         objective=objective_map.get(args.objective, OptimizationObjective.BALANCED),
     )
 
-    print(f"[KAI] Generating placement plan (objective={args.objective})...")
+    print(f"[CAI] Generating placement plan (objective={args.objective})...")
     plan = engine.generate_plan(loader)
 
     print()
@@ -685,16 +685,16 @@ def cmd_placement(args):
         import json
         with open(args.output, "w") as f:
             json.dump(plan.to_dict(), f, indent=2)
-        print(f"[KAI] Plan saved to: {args.output}")
+        print(f"[CAI] Plan saved to: {args.output}")
 
 
 def cmd_energy_loop(args):
     """Start the energy feedback control loop."""
     from model.energy_feedback_loop import EnergyFeedbackController
 
-    print("[KAI] Starting energy feedback control loop...")
-    print(f"[KAI] Power target: {args.power_target}W")
-    print(f"[KAI] Latency target: {args.latency_target}ms")
+    print("[CAI] Starting energy feedback control loop...")
+    print(f"[CAI] Power target: {args.power_target}W")
+    print(f"[CAI] Latency target: {args.latency_target}ms")
 
     controller = EnergyFeedbackController(
         power_target_w=args.power_target,
@@ -703,16 +703,16 @@ def cmd_energy_loop(args):
     )
 
     if args.daemon:
-        print("[KAI] Running in daemon mode (Ctrl+C to stop)...")
+        print("[CAI] Running in daemon mode (Ctrl+C to stop)...")
         try:
             controller.run_forever()
         except KeyboardInterrupt:
-            print("\n[KAI] Stopping control loop...")
+            print("\n[CAI] Stopping control loop...")
             controller.stop()
     else:
-        print("[KAI] Running single control step...")
+        print("[CAI] Running single control step...")
         config = controller.step()
-        print(f"[KAI] Recommended config: {config}")
+        print(f"[CAI] Recommended config: {config}")
 
 
 def cmd_fault_tolerant(args):
@@ -722,7 +722,7 @@ def cmd_fault_tolerant(args):
     from model.resource_detector import ResourceDetector
     from model.fault_tolerant_pipeline import FaultTolerantPipeline
 
-    print(f"[KAI] Loading model: {args.model}")
+    print(f"[CAI] Loading model: {args.model}")
     loader = HFModelLoader(
         args.model,
         dtype=args.dtype,
@@ -734,14 +734,14 @@ def cmd_fault_tolerant(args):
     nodes = detector.scan()
     num_chunks = args.num_chunks or len(nodes)
 
-    print(f"[KAI] Partitioning into {num_chunks} chunks...")
+    print(f"[CAI] Partitioning into {num_chunks} chunks...")
     chunker = LayerChunker(loader)
     chunks = chunker.create_chunks(num_chunks)
 
-    print("[KAI] Loading weights...")
+    print("[CAI] Loading weights...")
     _load_real_weights(loader, chunks, args.device, quantize=args.quantize)
 
-    print("[KAI] Setting up fault-tolerant pipeline...")
+    print("[CAI] Setting up fault-tolerant pipeline...")
     pipeline = FaultTolerantPipeline(
         chunks=chunks,
         nodes=nodes,
@@ -753,7 +753,7 @@ def cmd_fault_tolerant(args):
     tokenizer = loader.get_tokenizer()
     input_ids = tokenizer.encode(args.prompt, return_tensors="pt")
 
-    print("[KAI] Running inference with fault tolerance...")
+    print("[CAI] Running inference with fault tolerance...")
     print("---")
 
     output = pipeline.forward(input_ids.to(args.device))
@@ -763,10 +763,10 @@ def cmd_fault_tolerant(args):
     print("---")
 
     stats = pipeline.get_stats()
-    print(f"[KAI] Checkpoints created: {stats['checkpoints_created']}")
-    print(f"[KAI] Failures detected: {stats['failures_detected']}")
-    print(f"[KAI] Recoveries: {stats['recoveries']}")
-    print("[KAI] Done.")
+    print(f"[CAI] Checkpoints created: {stats['checkpoints_created']}")
+    print(f"[CAI] Failures detected: {stats['failures_detected']}")
+    print(f"[CAI] Recoveries: {stats['recoveries']}")
+    print("[CAI] Done.")
 
 
 def cmd_plugins(args):
@@ -774,7 +774,7 @@ def cmd_plugins(args):
     from model.plugin_architecture import PluginRegistry
 
     if args.action == "list":
-        print("[KAI] Registered Plugins:")
+        print("[CAI] Registered Plugins:")
         for category in ["scheduler", "optimizer", "executor", "cache", "placement", "parallelism"]:
             plugins = PluginRegistry.list_plugins(category)
             if plugins:
@@ -786,17 +786,17 @@ def cmd_plugins(args):
                     print(f"    - {name}: {desc}")
     elif args.action == "info":
         if not args.name:
-            print("[KAI] Error: --name required for info action")
+            print("[CAI] Error: --name required for info action")
             return
         plugin = PluginRegistry.get(args.category, args.name)
         if plugin:
-            print(f"[KAI] Plugin: {args.name}")
+            print(f"[CAI] Plugin: {args.name}")
             print(f"  Category: {args.category}")
             print(f"  Class: {plugin.__name__}")
             doc = getattr(plugin, "__doc__", "No documentation")
             print(f"  Documentation:\n{doc}")
         else:
-            print(f"[KAI] Plugin not found: {args.category}/{args.name}")
+            print(f"[CAI] Plugin not found: {args.category}/{args.name}")
 
 
 def cmd_fcim(args):
@@ -804,8 +804,8 @@ def cmd_fcim(args):
     from model.fcim_worker_selector import FCIMWorkerSelector, WorkerProfile
     from model.resource_detector import ResourceDetector
 
-    print(f"[KAI] FCIM Worker Selector (mode={args.resource_mode})")
-    print(f"[KAI] Weights: cost={args.cost_weight}, efficiency={args.efficiency_weight}, fairness={args.fairness_weight}")
+    print(f"[CAI] FCIM Worker Selector (mode={args.resource_mode})")
+    print(f"[CAI] Weights: cost={args.cost_weight}, efficiency={args.efficiency_weight}, fairness={args.fairness_weight}")
 
     detector = ResourceDetector(mode=args.resource_mode)
     nodes = detector.scan()
@@ -853,12 +853,12 @@ def cmd_adsa(args):
         "adaptive": SchedulingPolicy.ADAPTIVE,
     }
 
-    print(f"[KAI] ADSA Scheduler (policy={args.policy})")
+    print(f"[CAI] ADSA Scheduler (policy={args.policy})")
 
     scheduler = ADSAScheduler(initial_policy=policy_map[args.policy])
 
     # Create test tasks
-    print(f"[KAI] Creating {args.num_tasks} test tasks...")
+    print(f"[CAI] Creating {args.num_tasks} test tasks...")
     for i in range(args.num_tasks):
         task = ADSATask(
             task_id=f"task-{i}",
@@ -897,7 +897,7 @@ def cmd_batch(args):
         "continuous": BatchingStrategy.CONTINUOUS,
     }
 
-    print(f"[KAI] Batch Processor Configuration")
+    print(f"[CAI] Batch Processor Configuration")
     print(f"  Max Batch Size: {args.max_batch_size}")
     print(f"  Strategy: {args.strategy}")
     print(f"  Timeout: {args.timeout_ms}ms")
@@ -922,7 +922,7 @@ def cmd_active_inference(args):
     """Active inference controller."""
     from model.active_inference import ActiveInferenceAgent, PolicyPreference
 
-    print("[KAI] Active Inference Controller")
+    print("[CAI] Active Inference Controller")
     print(f"  Planning Horizon: {args.planning_horizon}")
     print(f"  Exploration Factor: {args.exploration_factor}")
 
@@ -972,7 +972,7 @@ def cmd_dfs_scheduler(args):
         "heuristic": PruningStrategy.HEURISTIC,
     }
 
-    print(f"[KAI] DFS Scheduler (pruning={args.pruning})")
+    print(f"[CAI] DFS Scheduler (pruning={args.pruning})")
     print(f"  Time Limit: {args.time_limit}s")
     print(f"  Tasks: {args.num_tasks}, Workers: {args.num_workers}")
 
@@ -1024,7 +1024,7 @@ def cmd_ilp_scheduler(args):
     from model.ilp_scheduler import AdaptiveScheduler, HeuristicScheduler, SchedulingProblem
     import random
 
-    print(f"[KAI] ILP/Heuristic Scheduler (algorithm={args.algorithm})")
+    print(f"[CAI] ILP/Heuristic Scheduler (algorithm={args.algorithm})")
     print(f"  ILP Threshold: {args.ilp_threshold}")
     print(f"  Tasks: {args.num_tasks}, Workers: {args.num_workers}")
 
@@ -1080,7 +1080,7 @@ def cmd_onnx(args):
     """PyTorch to ONNX conversion."""
     from model.onnx_converter import ONNXConverter, ExportConfig, ONNXOptimizationLevel
 
-    print(f"[KAI] ONNX Converter")
+    print(f"[CAI] ONNX Converter")
     print(f"  Model: {args.model}")
     print(f"  Output: {args.output}")
     print(f"  Opset: {args.opset}")
@@ -1095,7 +1095,7 @@ def cmd_onnx(args):
 
     # Load model
     from model.hf_loader import HFModelLoader
-    print(f"[KAI] Loading model...")
+    print(f"[CAI] Loading model...")
     loader = HFModelLoader(
         args.model,
         dtype=args.dtype,
@@ -1112,7 +1112,7 @@ def cmd_onnx(args):
             token=args.token,
         )
 
-        print("[KAI] Exporting to ONNX...")
+        print("[CAI] Exporting to ONNX...")
         result = converter.export(model, args.output, config=config)
 
         print()
@@ -1130,7 +1130,7 @@ def cmd_onnx(args):
             print(f"  Error: {result.error}")
 
     except Exception as e:
-        print(f"[KAI] Error: {e}")
+        print(f"[CAI] Error: {e}")
 
 
 def cmd_simulate(args):
@@ -1144,7 +1144,7 @@ def cmd_simulate(args):
         3: OptimizationLevel.EXTREME,
     }
 
-    print(f"[KAI] Simulation Optimizer")
+    print(f"[CAI] Simulation Optimizer")
     print(f"  Model: {args.model}")
     print(f"  Optimization Level: {args.optimization_level}")
     print(f"  Decode Steps: {args.num_decode_steps}")
@@ -1158,7 +1158,7 @@ def cmd_simulate(args):
     optimizer = SimulationOptimizer(config)
 
     # Mock model (since we're simulating)
-    print("[KAI] Running optimized simulation...")
+    print("[CAI] Running optimized simulation...")
 
     result = optimizer.optimize_simulation(
         model=None,  # Mock
@@ -1189,7 +1189,7 @@ def cmd_prepare(args):
     from model.hf_loader import HFModelLoader
     from model.layer_chunker import LayerChunker
 
-    print(f"[KAI] Preparing model: {args.model}")
+    print(f"[CAI] Preparing model: {args.model}")
     loader = HFModelLoader(
         args.model,
         dtype=args.dtype,
@@ -1200,17 +1200,17 @@ def cmd_prepare(args):
     try:
         loader.validate_architecture()
     except ValueError as e:
-        print(f"[KAI] Error: {e}")
+        print(f"[CAI] Error: {e}")
         sys.exit(1)
 
     size_est = loader.get_model_size_estimate()
     dtype_key = "float16_mb" if args.dtype in ("float16", "fp16") else "float32_mb"
     est_mb = size_est.get(dtype_key, size_est["float32_mb"])
-    print(f"[KAI] Model: ~{size_est['params_millions']:.0f}M params, ~{est_mb:.0f} MB ({args.dtype})")
+    print(f"[CAI] Model: ~{size_est['params_millions']:.0f}M params, ~{est_mb:.0f} MB ({args.dtype})")
 
     # Create chunks
     num_chunks = args.num_chunks
-    print(f"[KAI] Partitioning into {num_chunks} chunks...")
+    print(f"[CAI] Partitioning into {num_chunks} chunks...")
     chunker = LayerChunker(loader)
     chunks = chunker.create_chunks(num_chunks)
 
@@ -1218,7 +1218,7 @@ def cmd_prepare(args):
         print(f"  Chunk {c.chunk_id}: {c.layer_names} (~{c.estimate_memory_mb():.0f} MB)")
 
     # Load weights and save per-chunk
-    print("[KAI] Loading and saving chunk weights...")
+    print("[CAI] Loading and saving chunk weights...")
     _load_real_weights(loader, chunks, "cpu", quantize=getattr(args, "quantize", None))
 
     output_dir = args.output_dir
@@ -1245,8 +1245,8 @@ def cmd_prepare(args):
     manifest_path = os.path.join(output_dir, "chunk_manifest.json")
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
-    print(f"[KAI] Manifest saved: {manifest_path}")
-    print("[KAI] Preparation complete. Chunk weights ready for K8s deployment.")
+    print(f"[CAI] Manifest saved: {manifest_path}")
+    print("[CAI] Preparation complete. Chunk weights ready for K8s deployment.")
 
 
 def _load_real_weights(loader, chunks, device, quantize=None):
@@ -1357,8 +1357,8 @@ def _load_weights_shard_based(loader, chunks, device, quantize=None):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="kai",
-        description="KAI — Run large AI models on clusters of low-end PCs",
+        prog="CAI",
+        description="CAI — Run large AI models on clusters of low-end PCs",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -1384,8 +1384,8 @@ def main():
                             help="Enable FlexGen-style CPU/disk offloading for models exceeding GPU VRAM")
     run_parser.add_argument("--gpu-budget-mb", type=float, default=0,
                             help="GPU VRAM budget in MB for offloading (0 = auto-detect)")
-    run_parser.add_argument("--disk-swap-dir", default="/tmp/kai_swap",
-                            help="Directory for disk-swapped weights (default: /tmp/kai_swap)")
+    run_parser.add_argument("--disk-swap-dir", default="/tmp/cai_swap",
+                            help="Directory for disk-swapped weights (default: /tmp/cai_swap)")
     run_parser.set_defaults(func=cmd_run)
 
     # --- scan ---
@@ -1404,7 +1404,7 @@ def main():
     part_parser.set_defaults(func=cmd_partition)
 
     # --- benchmark ---
-    bench_parser = subparsers.add_parser("benchmark", help="Run energy benchmark (original KAI)")
+    bench_parser = subparsers.add_parser("benchmark", help="Run energy benchmark (original CAI)")
     bench_parser.add_argument("--mode", default="local", choices=["local", "kubernetes", "both"])
     bench_parser.add_argument("--model", default="transformer", choices=["transformer", "cnn"])
     bench_parser.add_argument("--hf-model", default=None,
@@ -1429,8 +1429,8 @@ def main():
     dash_parser.set_defaults(func=cmd_dashboard)
 
     # --- build ---
-    build_parser = subparsers.add_parser("build", help="Build Docker images for KAI")
-    build_parser.add_argument("--tag", default="kai:latest", help="Base image tag")
+    build_parser = subparsers.add_parser("build", help="Build Docker images for CAI")
+    build_parser.add_argument("--tag", default="CAI:latest", help="Base image tag")
     build_parser.add_argument("--push", action="store_true", help="Push images after build")
     build_parser.set_defaults(func=cmd_build)
 
@@ -1538,7 +1538,7 @@ def main():
     ft_parser.add_argument("--num-chunks", type=int, default=None)
     ft_parser.add_argument("--checkpoint-interval", type=int, default=5,
                             help="Checkpoint every N layers")
-    ft_parser.add_argument("--checkpoint-dir", default="/tmp/kai_checkpoints",
+    ft_parser.add_argument("--checkpoint-dir", default="/tmp/cai_checkpoints",
                             help="Directory for checkpoints")
     ft_parser.add_argument("--health-interval", type=float, default=5.0,
                             help="Health check interval in seconds")

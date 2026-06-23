@@ -3,7 +3,7 @@
 # ClusterIP Services for model chunk gRPC servers.
 #
 # Each chunk gets its own Service so the gateway can address
-# chunks by stable DNS name: kai-chunk-0, kai-chunk-1, etc.
+# chunks by stable DNS name: CAI-chunk-0, CAI-chunk-1, etc.
 # The gateway's CHUNK_HOSTS env var references these names.
 #
 # When using the controller.py script, services are created
@@ -15,15 +15,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kai-chunk-0
+  name: CAI-chunk-0
   labels:
-    app: kai
+    app: CAI
     component: chunk
     chunk-id: "0"
 spec:
   type: ClusterIP
   selector:
-    app: kai
+    app: CAI
     component: chunk
     chunk-id: "0"
   ports:
@@ -38,15 +38,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kai-chunk-1
+  name: CAI-chunk-1
   labels:
-    app: kai
+    app: CAI
     component: chunk
     chunk-id: "1"
 spec:
   type: ClusterIP
   selector:
-    app: kai
+    app: CAI
     component: chunk
     chunk-id: "1"
   ports:
@@ -61,15 +61,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kai-chunk-2
+  name: CAI-chunk-2
   labels:
-    app: kai
+    app: CAI
     component: chunk
     chunk-id: "2"
 spec:
   type: ClusterIP
   selector:
-    app: kai
+    app: CAI
     component: chunk
     chunk-id: "2"
   ports:

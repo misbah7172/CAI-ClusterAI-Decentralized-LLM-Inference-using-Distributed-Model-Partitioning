@@ -5,8 +5,8 @@ param(
     [string]$Token,
     [string]$TokenFile,
     [string]$Distro = 'Ubuntu-22.04',
-    [string]$RepoUrl = 'https://github.com/misbah7172/GreenCluster-AI-KAI.git',
-    [string]$Workspace = '/opt/kai'
+    [string]$RepoUrl = 'https://github.com/misbah7172/GreenCluster-AI-CAI.git',
+    [string]$Workspace = '/opt/CAI'
 )
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -20,8 +20,8 @@ if (-not [string]::IsNullOrWhiteSpace($TokenFile)) {
     $adminArgs += @('-TokenFile', $TokenFile)
 }
 
-Ensure-KaiAdministrator -ScriptPath $PSCommandPath -RemainingArgs $adminArgs
-Ensure-KaiWslAndDistro -Distro $Distro
+Ensure-CaiAdministrator -ScriptPath $PSCommandPath -RemainingArgs $adminArgs
+Ensure-CaiWslAndDistro -Distro $Distro
 
 if ([string]::IsNullOrWhiteSpace($Token) -and -not [string]::IsNullOrWhiteSpace($TokenFile)) {
     $Token = Get-Content -LiteralPath $TokenFile -Raw
@@ -31,8 +31,8 @@ if ([string]::IsNullOrWhiteSpace($Token)) {
     throw 'Provide either -Token or -TokenFile.'
 }
 
-$pythonScript = Convert-KaiWindowsPathToWsl -Path (Join-Path $scriptDir '..\bootstrap\setup_worker.py')
-Invoke-KaiWslPython -PythonScriptWslPath $pythonScript -Arguments @(
+$pythonScript = Convert-CaiWindowsPathToWsl -Path (Join-Path $scriptDir '..\bootstrap\setup_worker.py')
+Invoke-CaiWslPython -PythonScriptWslPath $pythonScript -Arguments @(
     '--server-url', $ServerUrl,
     '--token', ($Token.Trim()),
     '--workspace', $Workspace,
@@ -40,5 +40,5 @@ Invoke-KaiWslPython -PythonScriptWslPath $pythonScript -Arguments @(
 ) -Distro $Distro
 
 Write-Host ''
-Write-Host 'KAI worker node joined successfully.'
+Write-Host 'CAI worker node joined successfully.'
 Write-Host "Connected to: $ServerUrl"

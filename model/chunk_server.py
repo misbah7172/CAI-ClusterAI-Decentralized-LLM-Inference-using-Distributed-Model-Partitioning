@@ -163,7 +163,7 @@ class InferenceServicer(inference_pb2_grpc.InferenceServiceServicer):
     def Checkpoint(self, request, context):
         """Save hidden state + weights to disk for migration."""
         start = time.perf_counter()
-        output_path = request.output_path or f"/tmp/kai_checkpoint_{self.chunk_id}"
+        output_path = request.output_path or f"/tmp/cai_checkpoint_{self.chunk_id}"
         os.makedirs(output_path, exist_ok=True)
 
         # Save model weights

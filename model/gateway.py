@@ -564,8 +564,8 @@ def main():
 
     chunk_hosts_str = args.chunk_hosts or os.environ.get("CHUNK_HOSTS", "localhost:50051")
     port = args.port or int(os.environ.get("GATEWAY_PORT", "8080"))
-    route_policy = os.environ.get("KAI_GATEWAY_ROUTE_POLICY", "deterministic-latency")
-    raw_latency = os.environ.get("KAI_LINK_LATENCY_MS", "")
+    route_policy = os.environ.get("CAI_GATEWAY_ROUTE_POLICY", "deterministic-latency")
+    raw_latency = os.environ.get("CAI_LINK_LATENCY_MS", "")
     link_latency_ms: Dict[str, float] = {}
     if raw_latency:
         try:
@@ -577,7 +577,7 @@ def main():
                     except Exception:
                         pass
         except Exception as e:
-            logger.warning("Invalid KAI_LINK_LATENCY_MS JSON: %s", e)
+            logger.warning("Invalid CAI_LINK_LATENCY_MS JSON: %s", e)
 
     chunk_hosts = [h.strip() for h in chunk_hosts_str.split(",")]
 

@@ -1,4 +1,4 @@
-# KAI - Kubernetes AI Inference Energy Benchmarking Platform
+# CAI - Kubernetes AI Inference Energy Benchmarking Platform
 # Dependencies
 
 # Deep Learning

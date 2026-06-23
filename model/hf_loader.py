@@ -1,5 +1,5 @@
 """
-HuggingFace model loader for KAI distributed inference.
+HuggingFace model loader for CAI distributed inference.
 
 Loads HuggingFace causal language models and exposes their layer structure
 for distributed chunking across Kubernetes nodes. Supports memory-safe

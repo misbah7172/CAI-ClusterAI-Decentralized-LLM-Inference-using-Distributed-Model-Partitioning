@@ -1,4 +1,4 @@
-# KAI Prompt Flow - ASCII Architecture & Visual Reference
+# CAI Prompt Flow - ASCII Architecture & Visual Reference
 
 ## **HIGH-LEVEL SYSTEM ARCHITECTURE**
 
@@ -6,7 +6,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          USER INTERFACE LAYER                           │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  Terminal CLI (kai_cli.py)  │  Dashboard UI (streamlit)  │  API Client  │
+│  Terminal CLI (cai_cli.py)  │  Dashboard UI (streamlit)  │  API Client  │
 └──────────────┬──────────────────────────────────────────────────────────┘
                │
                │ "prompt" + "model" + "max_tokens"
@@ -158,7 +158,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          USER DISPLAY                                   │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  >>> python kai_cli.py run --prompt "Once upon a time"                 │
+│  >>> python cai_cli.py run --prompt "Once upon a time"                 │
 │                                                                          │
 │  Generated:                                                             │
 │  Once upon a time, there was a small village nestled in the mountains. │
@@ -572,14 +572,14 @@ OPTIMIZATION OPPORTUNITIES:
 ## **QUICK REFERENCE: MODULE INTERACTIONS**
 
 ```
-kai_cli.py
+cai_cli.py
   └─→ HFModelLoader (load model weights)
       └─→ Tokenizer (encode prompts)
           └─→ LayerChunker (partition model)
               └─→ ResourceDetector (scan K8s cluster)
                   └─→ chunk_model (save weight files)
                       └─→ [Upload to K8s PVC]
-                          └─→ KAIController (deploy chunks)
+                          └─→ CAIController (deploy chunks)
                               ├─→ InferenceServicer (runs in Chunk Pod)
                               │   └─→ chunk_server.py
                               │
@@ -608,7 +608,7 @@ When you build this diagram in app.eraser, organize it with:
 
 ```
 TOP LEVEL (Canvas):
-├─ Title: "KAI Distributed LLM Inference - Prompt Flow"
+├─ Title: "CAI Distributed LLM Inference - Prompt Flow"
 ├─ Legend (bottom): Data types, colors, symbols
 │
 └─ Five Main Phases (left-to-right):

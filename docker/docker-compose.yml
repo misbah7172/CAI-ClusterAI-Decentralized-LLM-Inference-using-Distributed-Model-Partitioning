@@ -1,6 +1,6 @@
 # ============================================================
 # docker-compose.yml
-# Local multi-container test for the KAI inference pipeline.
+# Local multi-container test for the CAI inference pipeline.
 #
 # Launches:
 #   - 3 chunk servers (transformer, 3 chunks)

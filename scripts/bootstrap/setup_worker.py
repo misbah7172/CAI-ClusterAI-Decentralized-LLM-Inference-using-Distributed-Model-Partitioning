@@ -23,7 +23,7 @@ def _read_token(args: argparse.Namespace) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Bootstrap a KAI worker node.")
+    parser = argparse.ArgumentParser(description="Bootstrap a CAI worker node.")
     parser.add_argument("--workspace", default=DEFAULT_WORKSPACE, help="Repo workspace path (Linux/WSL path).")
     parser.add_argument("--repo-url", default=DEFAULT_REPO_URL, help="Git repository URL to clone on the node.")
     parser.add_argument("--server-url", required=True, help="K3s server URL, e.g. https://192.168.1.100:6443")

@@ -1,4 +1,4 @@
-# KAI Performance Enhancements Summary
+# CAI Performance Enhancements Summary
 
 ## Completed Implementation ✅
 
@@ -223,7 +223,7 @@ Inferences: 1,000
 
 **Running the Suite:**
 ```bash
-cd /path/to/KAI
+cd /path/to/CAI
 python -m tests.test_performance_improvements
 
 # Output: benchmark_results.json (comprehensive report)
@@ -326,7 +326,7 @@ Gateway.run_inference()
 
 ### 1. Run Benchmarks (Shows all improvements)
 ```bash
-cd D:\CODE\KAI
+cd D:\CODE\CAI
 $env:PYTHONPATH = '.'
 python.exe -m tests.test_performance_improvements
 # Output: benchmark_results.json
@@ -481,7 +481,7 @@ You can now:
 - Launch dashboard with CUDA runtime:
   - ./.venv310/Scripts/python -m streamlit run dashboard/comprehensive_dashboard.py
 - Optional launcher command:
-  - python kai_cli_dashboard.py --port 8511 dashboard-pro
+  - python cai_cli_dashboard.py --port 8511 dashboard-pro
 
 ### Live GPU Telemetry (Implemented)
 - Real-time panel now shows:
@@ -519,6 +519,6 @@ You can now:
 ### Change Artifacts
 - Updated implementation files include:
   - dashboard/comprehensive_dashboard.py
-  - kai_cli_dashboard.py
+  - cai_cli_dashboard.py
   - README.md
 - Documentation synchronized with current implemented state as of this update.

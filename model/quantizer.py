@@ -1,5 +1,5 @@
 """
-Quantization utilities for KAI distributed inference.
+Quantization utilities for CAI distributed inference.
 
 Provides 4-bit (NF4) and 8-bit (INT8) quantization via bitsandbytes,
 reducing memory usage per chunk so larger models fit on low-end GPUs.

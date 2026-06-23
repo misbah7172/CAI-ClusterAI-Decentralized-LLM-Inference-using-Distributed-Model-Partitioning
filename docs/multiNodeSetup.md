@@ -1,6 +1,6 @@
-# KAI — Multi-Node Setup Guide
+# CAI — Multi-Node Setup Guide
 
-How to connect two (or more) physical machines to run KAI distributed inference.
+How to connect two (or more) physical machines to run CAI distributed inference.
 
 ---
 
@@ -16,7 +16,7 @@ Run PowerShell as Administrator:
 powershell -ExecutionPolicy Bypass -File scripts/windows/setup-primary.ps1 -ServerIp 192.168.1.100
 ```
 
-This installs the node prerequisites, starts the K3s primary server, and saves the join token to `~/.kai/k3s-node-token.txt` inside WSL plus `logs/k3s-node-token.txt` on the Windows side.
+This installs the node prerequisites, starts the K3s primary server, and saves the join token to `~/.CAI/k3s-node-token.txt` inside WSL plus `logs/k3s-node-token.txt` on the Windows side.
 
 ### Windows Worker Node
 
@@ -34,14 +34,14 @@ The worker wrapper installs the node prerequisites, joins the cluster, and uses 
 python scripts/bootstrap/setup_primary.py --server-ip 192.168.1.100
 ```
 
-This installs the node prerequisites, starts the K3s primary server, and saves the join token to `~/.kai/k3s-node-token.txt`.
+This installs the node prerequisites, starts the K3s primary server, and saves the join token to `~/.CAI/k3s-node-token.txt`.
 
 ### Linux / WSL Worker Node
 
 ```bash
 python scripts/bootstrap/setup_worker.py \
   --server-url https://192.168.1.100:6443 \
-  --token-file ~/.kai/k3s-node-token.txt
+  --token-file ~/.CAI/k3s-node-token.txt
 ```
 
 These scripts run directly on Linux or inside WSL2.
@@ -52,12 +52,12 @@ These scripts run directly on Linux or inside WSL2.
 
 ## Docker Image in GitHub
 
-The repo now includes a root `Dockerfile` for the KAI dashboard image and a GitHub Actions workflow that builds and pushes it to GitHub Container Registry (GHCR).
+The repo now includes a root `Dockerfile` for the CAI dashboard image and a GitHub Actions workflow that builds and pushes it to GitHub Container Registry (GHCR).
 
 Image name:
 
 ```text
-ghcr.io/<github-owner>/kai-dashboard:latest
+ghcr.io/<github-owner>/CAI-dashboard:latest
 ```
 
 The workflow is stored in `.github/workflows/docker-ghcr.yml` and runs on pushes to `main`, version tags, or manually from the GitHub Actions UI.
@@ -70,8 +70,8 @@ The workflow is stored in `.github/workflows/docker-ghcr.yml` and runs on pushes
 |---|---|
 | OS | Windows (with WSL2) or Linux |
 | NVIDIA GPU | Any NVIDIA GPU with drivers installed |
-| Python 3.11+ | Required for KAI CLI |
-| Docker + NVIDIA Container Toolkit | Required to build and run KAI images |
+| Python 3.11+ | Required for CAI CLI |
+| Docker + NVIDIA Container Toolkit | Required to build and run CAI images |
 | Same local network | All machines must be on the same LAN (Wi-Fi or Ethernet) |
 
 ---
@@ -135,35 +135,35 @@ kubectl describe node friends-laptop | grep nvidia.com/gpu
 ## Step 3: Build Docker Images
 
 ```bash
-# On the machine where KAI code lives:
-cd C:\CODE\KAI
-docker build -t ghcr.io/<github-owner>/kai-dashboard:latest .
+# On the machine where CAI code lives:
+cd C:\CODE\CAI
+docker build -t ghcr.io/<github-owner>/CAI-dashboard:latest .
 
 # Or let GitHub Actions publish it automatically to GHCR.
 ```
 
-If you want the cluster component images, keep using the existing KAI builder:
+If you want the cluster component images, keep using the existing CAI builder:
 
 ```bash
-python kai_cli.py build --tag kai:latest
+python cai_cli.py build --tag CAI:latest
 
 # This builds 3 images:
-#   kai-chunk:latest     — Model chunk server (CUDA + PyTorch + gRPC)
-#   kai-gateway:latest   — HTTP gateway that chains chunks together
-#   kai-monitor:latest   — GPU/CPU monitoring service
+#   CAI-chunk:latest     — Model chunk server (CUDA + PyTorch + gRPC)
+#   CAI-gateway:latest   — HTTP gateway that chains chunks together
+#   CAI-monitor:latest   — GPU/CPU monitoring service
 ```
 
 **Make images available on ALL nodes** (pick one option):
 
 ```bash
 # Option A: Save and copy via SSH
-docker save kai-chunk:latest | ssh user@192.168.1.105 'docker load'
-docker save kai-gateway:latest | ssh user@192.168.1.105 'docker load'
-docker save kai-monitor:latest | ssh user@192.168.1.105 'docker load'
+docker save CAI-chunk:latest | ssh user@192.168.1.105 'docker load'
+docker save CAI-gateway:latest | ssh user@192.168.1.105 'docker load'
+docker save CAI-monitor:latest | ssh user@192.168.1.105 'docker load'
 
 # Option B: Push to a shared registry
-docker tag kai-chunk:latest your-registry.com/kai-chunk:latest
-docker push your-registry.com/kai-chunk:latest
+docker tag CAI-chunk:latest your-registry.com/CAI-chunk:latest
+docker push your-registry.com/CAI-chunk:latest
 # Repeat for gateway and monitor images
 ```
 
@@ -173,10 +173,10 @@ docker push your-registry.com/kai-chunk:latest
 
 ```bash
 # Split the model into chunks (one per node):
-python kai_cli.py prepare --model microsoft/phi-2 --num-chunks 2
+python cai_cli.py prepare --model microsoft/phi-2 --num-chunks 2
 
 # For reduced memory usage, add quantization:
-python kai_cli.py prepare --model microsoft/phi-2 --num-chunks 2 --quantize 4bit
+python cai_cli.py prepare --model microsoft/phi-2 --num-chunks 2 --quantize 4bit
 ```
 
 This downloads the HuggingFace model and saves per-chunk weight files. These files need to be accessible to the Kubernetes pods on each node (via volume mounts or shared storage).
@@ -190,11 +190,11 @@ This downloads the HuggingFace model and saves per-chunk weight files. These fil
 python -m kubernetes.controller deploy --num-chunks 2 --model transformer
 
 # Verify pods are spread across nodes:
-kubectl get pods -n kai -o wide
+kubectl get pods -n CAI -o wide
 # NAME             READY   STATUS    NODE
-# kai-chunk-0-xx   1/1     Running   your-desktop
-# kai-chunk-1-xx   1/1     Running   friends-laptop
-# kai-gateway-xx   1/1     Running   your-desktop
+# CAI-chunk-0-xx   1/1     Running   your-desktop
+# CAI-chunk-1-xx   1/1     Running   friends-laptop
+# CAI-gateway-xx   1/1     Running   your-desktop
 ```
 
 Kubernetes pod anti-affinity rules prefer placing each chunk on a different node.
@@ -244,7 +244,7 @@ DEAS automatically migrates model chunks away from overheating nodes:
 
 ```bash
 # Run benchmark with DEAS enabled:
-python kai_cli.py benchmark --hf-model sshleifer/tiny-gpt2 --mode kubernetes \
+python cai_cli.py benchmark --hf-model sshleifer/tiny-gpt2 --mode kubernetes \
   --sampling-rate 0.1 --enable-deas --deas-cooldown 30.0
 ```
 
@@ -261,8 +261,8 @@ For models that exceed your cluster's total GPU VRAM:
 
 ```bash
 # Run with offloading — weights spill to RAM and disk:
-python kai_cli.py run --model microsoft/phi-2 --prompt "Hello" --max-tokens 50 \
-  --offload --gpu-budget-mb 3000 --disk-swap-dir /tmp/kai_swap
+python cai_cli.py run --model microsoft/phi-2 --prompt "Hello" --max-tokens 50 \
+  --offload --gpu-budget-mb 3000 --disk-swap-dir /tmp/cai_swap
 ```
 
 ---
@@ -322,8 +322,8 @@ Your Desktop (192.168.1.100)          Friend's Laptop (192.168.1.105)
 - [ ] K3s cluster running with all nodes visible (`kubectl get nodes`)
 - [ ] NVIDIA device plugin deployed (`kubectl describe node | grep nvidia`)
 - [ ] Docker images built and loaded on all nodes
-- [ ] Model weights prepared (`kai_cli.py prepare`)
-- [ ] Pods running and spread across nodes (`kubectl get pods -n kai -o wide`)
+- [ ] Model weights prepared (`cai_cli.py prepare`)
+- [ ] Pods running and spread across nodes (`kubectl get pods -n CAI -o wide`)
 - [ ] Gateway accessible at `<control-plane-ip>:30080`
 - [ ] Health check passes (`curl <ip>:30080/health`)
 
@@ -339,11 +339,11 @@ curl -sfL https://get.k3s.io | K3S_URL=https://192.168.1.100:6443 K3S_TOKEN=<tok
 
 # Load Docker images on the new node
 # Then redeploy with more chunks:
-python kai_cli.py prepare --model microsoft/phi-2 --num-chunks 3
+python cai_cli.py prepare --model microsoft/phi-2 --num-chunks 3
 python -m kubernetes.controller deploy --num-chunks 3 --model transformer
 ```
 
-KAI's auto-partitioner will distribute layers proportionally based on each node's available VRAM/RAM.
+CAI's auto-partitioner will distribute layers proportionally based on each node's available VRAM/RAM.
 
 ---
 
@@ -375,7 +375,7 @@ kubectl delete pod -n kube-system -l app=nvidia-device-plugin-ds
 ### Pods stuck in Pending
 ```bash
 # Check why:
-kubectl describe pod <pod-name> -n kai
+kubectl describe pod <pod-name> -n CAI
 
 # Common causes:
 # - Insufficient GPU resources (check requests in deployment YAML)
@@ -386,13 +386,13 @@ kubectl describe pod <pod-name> -n kai
 ### Gateway can't reach chunks
 ```bash
 # Check chunk service DNS:
-kubectl get svc -n kai
+kubectl get svc -n CAI
 
 # Test from inside the cluster:
-kubectl run test --rm -it --image=busybox -- nslookup kai-chunk-0.kai.svc.cluster.local
+kubectl run test --rm -it --image=busybox -- nslookup CAI-chunk-0.CAI.svc.cluster.local
 
 # Check gRPC connectivity:
-kubectl logs -n kai deployment/kai-gateway
+kubectl logs -n CAI deployment/CAI-gateway
 ```
 
 ### High latency between chunks
@@ -400,22 +400,22 @@ kubectl logs -n kai deployment/kai-gateway
 - Check network bandwidth: `iperf3 -s` on one machine, `iperf3 -c <ip>` on the other
 - Consider enabling gRPC compression in gateway settings
 - Reduce chunk count to minimize network round-trips
-- **Use intelligent placement** (Phase 24): `python kai_cli.py placement --model <model> --objective latency`
+- **Use intelligent placement** (Phase 24): `python cai_cli.py placement --model <model> --objective latency`
 
 ---
 
 ## Next-Generation Features for Multi-Node Deployments
 
-KAI includes advanced features specifically designed for multi-node deployments:
+CAI includes advanced features specifically designed for multi-node deployments:
 
 ### Intelligent Model Placement
 Automatically optimizes layer-to-node mapping based on network topology:
 ```bash
 # Generate optimal placement plan considering network latency
-python kai_cli.py placement --model microsoft/phi-2 --objective latency --output placement.json
+python cai_cli.py placement --model microsoft/phi-2 --objective latency --output placement.json
 
 # Or optimize for energy efficiency
-python kai_cli.py placement --model microsoft/phi-2 --objective energy
+python cai_cli.py placement --model microsoft/phi-2 --objective energy
 ```
 
 ### Network-Aware Scheduling
@@ -428,17 +428,17 @@ Enhanced DEAS that considers inter-node latency and bandwidth:
 For multi-GPU nodes, combine tensor and pipeline parallelism:
 ```bash
 # Auto-detect optimal parallelism mode
-python kai_cli.py hybrid --model microsoft/phi-2 --prompt "Hello" --mode auto
+python cai_cli.py hybrid --model microsoft/phi-2 --prompt "Hello" --mode auto
 
 # Force tensor parallelism across GPUs on the same node
-python kai_cli.py hybrid --model microsoft/phi-2 --prompt "Hello" --mode tensor --tensor-parallel 2
+python cai_cli.py hybrid --model microsoft/phi-2 --prompt "Hello" --mode tensor --tensor-parallel 2
 ```
 
 ### Fault-Tolerant Pipeline
 Automatically recovers from node failures:
 ```bash
 # Run with automatic failure detection and recovery
-python kai_cli.py fault-tolerant --model sshleifer/tiny-gpt2 --prompt "Hello" \
+python cai_cli.py fault-tolerant --model sshleifer/tiny-gpt2 --prompt "Hello" \
   --checkpoint-interval 5 --health-interval 5.0
 ```
 
@@ -446,7 +446,7 @@ python kai_cli.py fault-tolerant --model sshleifer/tiny-gpt2 --prompt "Hello" \
 Faster inference with mathematically identical output:
 ```bash
 # Use draft model to speed up inference
-python kai_cli.py speculative --model microsoft/phi-2 --prompt "Hello" \
+python cai_cli.py speculative --model microsoft/phi-2 --prompt "Hello" \
   --speculation-length 5 --verification strict
 ```
 
@@ -454,17 +454,17 @@ python kai_cli.py speculative --model microsoft/phi-2 --prompt "Hello" \
 Find optimal configuration for your cluster:
 ```bash
 # Auto-tune for energy efficiency
-python kai_cli.py autotune --model sshleifer/tiny-gpt2 --objective energy --max-trials 20
+python cai_cli.py autotune --model sshleifer/tiny-gpt2 --objective energy --max-trials 20
 
 # Auto-tune for minimum latency
-python kai_cli.py autotune --model sshleifer/tiny-gpt2 --objective latency --strategy bayesian
+python cai_cli.py autotune --model sshleifer/tiny-gpt2 --objective latency --strategy bayesian
 ```
 
 ### Energy Feedback Control
 Closed-loop optimization for power-constrained deployments:
 ```bash
 # Start energy feedback controller
-python kai_cli.py energy-loop --power-target 100 --latency-target 50 --daemon
+python cai_cli.py energy-loop --power-target 100 --latency-target 50 --daemon
 ```
 
 ---
@@ -475,84 +475,84 @@ python kai_cli.py energy-loop --power-target 100 --latency-target 50 --daemon
 Fair and cost-efficient worker selection across your cluster:
 ```bash
 # Analyze worker fairness and efficiency
-python kai_cli.py fcim --report
+python cai_cli.py fcim --report
 
 # Configure fairness weights
-python kai_cli.py fcim --fairness-weight 0.4 --efficiency-weight 0.4 --cost-weight 0.2
+python cai_cli.py fcim --fairness-weight 0.4 --efficiency-weight 0.4 --cost-weight 0.2
 ```
 
 ### ADSA Adaptive Scheduling
 Dynamic task scheduling optimized for multi-node workloads:
 ```bash
 # Use adaptive scheduling policy
-python kai_cli.py adsa --policy adaptive --show-metrics
+python cai_cli.py adsa --policy adaptive --show-metrics
 
 # Enable task aging to prevent starvation
-python kai_cli.py adsa --policy sjf --enable-aging --aging-rate 0.1
+python cai_cli.py adsa --policy sjf --enable-aging --aging-rate 0.1
 ```
 
 ### Batch Processing
 Process multiple requests together for improved throughput:
 ```bash
 # Enable adaptive batching
-python kai_cli.py batch --strategy adaptive --max-batch-size 16
+python cai_cli.py batch --strategy adaptive --max-batch-size 16
 
 # Enable continuous batching for streaming workloads
-python kai_cli.py batch --strategy continuous --timeout-ms 100
+python cai_cli.py batch --strategy continuous --timeout-ms 100
 ```
 
 ### ILP/Heuristic Scheduler
 Optimal task-to-node allocation:
 ```bash
 # Auto-select algorithm based on problem size
-python kai_cli.py ilp-scheduler --algorithm auto --num-tasks 20
+python cai_cli.py ilp-scheduler --algorithm auto --num-tasks 20
 
 # Force ILP for small clusters
-python kai_cli.py ilp-scheduler --algorithm ilp --time-limit 60
+python cai_cli.py ilp-scheduler --algorithm ilp --time-limit 60
 
 # Use genetic algorithm for large-scale deployments
-python kai_cli.py ilp-scheduler --algorithm genetic --population-size 100
+python cai_cli.py ilp-scheduler --algorithm genetic --population-size 100
 ```
 
 ### DFS Scheduler with Pruning
 Explore scheduling space with intelligent pruning:
 ```bash
 # Use branch-and-bound pruning
-python kai_cli.py dfs-scheduler --pruning bound --max-depth 10
+python cai_cli.py dfs-scheduler --pruning bound --max-depth 10
 
 # Use beam search for faster results
-python kai_cli.py dfs-scheduler --pruning beam --beam-width 5
+python cai_cli.py dfs-scheduler --pruning beam --beam-width 5
 ```
 
 ### Simulation Optimization
 Test configurations without actual deployment:
 ```bash
 # Run optimized simulation
-python kai_cli.py simulate --model sshleifer/tiny-gpt2 --optimization-level 2
+python cai_cli.py simulate --model sshleifer/tiny-gpt2 --optimization-level 2
 
 # Enable decode approximation for faster simulation
-python kai_cli.py simulate --model sshleifer/tiny-gpt2 --approximate-decode --sample-rate 0.1
+python cai_cli.py simulate --model sshleifer/tiny-gpt2 --approximate-decode --sample-rate 0.1
 ```
 
 ### ONNX Export for Cross-Platform Testing
 Export models for testing across different hardware:
 ```bash
 # Export to ONNX with optimization
-python kai_cli.py onnx --model sshleifer/tiny-gpt2 --output model.onnx --optimize
+python cai_cli.py onnx --model sshleifer/tiny-gpt2 --output model.onnx --optimize
 
 # Export with quantization
-python kai_cli.py onnx --model sshleifer/tiny-gpt2 --output model_int8.onnx --quantize
+python cai_cli.py onnx --model sshleifer/tiny-gpt2 --output model_int8.onnx --quantize
 ```
 
 ---
 
-## End-to-End Visualization: How a Model Runs Through KAI
+## End-to-End Visualization: How a Model Runs Through CAI
 
 ### 1) Deployment-Time Flow (one-time setup)
 
 ```mermaid
 flowchart LR
-    A[User runs: kai_cli.py prepare] --> B[HF loader downloads model]
+    A[User runs: cai_cli.py prepare] --> B[HF loader downloads model]
     B --> C[Layer chunker splits model into layer ranges]
     C --> D[Auto/Intelligent placement maps chunks to nodes]
     D --> E[Kubernetes controller deploys chunk pods + gateway + monitor]

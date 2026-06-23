@@ -39,7 +39,7 @@ class BenchmarkResult:
 
 
 class PerformanceBenchmark:
-    """Benchmark suite for KAI components."""
+    """Benchmark suite for CAI components."""
     
     def __init__(self):
         self.results: Dict[str, List[BenchmarkResult]] = {}
@@ -362,7 +362,7 @@ class PerformanceBenchmark:
     def run_all(self) -> Dict[str, Any]:
         """Run all benchmarks and return comprehensive report."""
         logger.info("\n" + "=" * 80)
-        logger.info("KAI PERFORMANCE BENCHMARK SUITE")
+        logger.info("CAI PERFORMANCE BENCHMARK SUITE")
         logger.info("=" * 80 + "\n")
         
         benchmarks = [

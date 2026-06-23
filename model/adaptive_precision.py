@@ -1,5 +1,5 @@
 """
-Adaptive Precision Controller for KAI.
+Adaptive Precision Controller for CAI.
 
 Implements dynamic precision adjustment based on layer criticality,
 memory pressure, and power usage. Maintains output quality while

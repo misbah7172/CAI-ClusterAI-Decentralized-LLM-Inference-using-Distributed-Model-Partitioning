@@ -1,5 +1,5 @@
 """
-Speculative Decoding for KAI.
+Speculative Decoding for CAI.
 
 Implements speculative decoding to reduce latency and GPU utilization:
 - Use a smaller draft model to generate candidate tokens

@@ -7,7 +7,7 @@ __pycache__
 .streamlit
 logs
 swap
-kai_swap
+cai_swap
 *.pyc
 *.pyo
 *.pyd

@@ -1,4 +1,4 @@
-# KAI Single-GPU Large Model Execution - System Audit & Upgrade Plan
+# CAI Single-GPU Large Model Execution - System Audit & Upgrade Plan
 
 **Date**: April 28, 2026  
 **Status**: Phase 1 (Audit) → Phase 2-6 (Implementation)
@@ -470,7 +470,7 @@ Track:
 
 **Scenario**: 
 - Background process uses 8GB of 24GB GPU
-- KAI needs to infer with remaining 16GB
+- CAI needs to infer with remaining 16GB
 - Query arrives with 8K token context
 
 **Without Adaptive Control**:

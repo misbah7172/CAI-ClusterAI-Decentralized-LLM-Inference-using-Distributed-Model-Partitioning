@@ -1,5 +1,5 @@
 """
-Auto-Tuning Benchmark System for KAI.
+Auto-Tuning Benchmark System for CAI.
 
 Automatically tests multiple configurations and finds optimal settings:
 - Partition strategies
@@ -515,7 +515,7 @@ class BayesianSearch(SearchStrategy):
 
 
 class AutoTuner:
-    """Auto-tuning system for finding optimal KAI configurations.
+    """Auto-tuning system for finding optimal CAI configurations.
     
     Parameters
     ----------

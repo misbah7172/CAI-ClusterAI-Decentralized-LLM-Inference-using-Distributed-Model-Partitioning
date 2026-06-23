@@ -1,5 +1,5 @@
 """
-KAI -- Integration Tests
+CAI -- Integration Tests
 
 Validates end-to-end workflows across all major subsystems.
 Run with::

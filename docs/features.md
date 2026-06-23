@@ -1,4 +1,4 @@
-# KAI Feature Implementation Quick Reference
+# CAI Feature Implementation Quick Reference
 
 ## Summary Table
 
@@ -82,7 +82,7 @@
 ## Key Dependencies & Integrations
 
 ```
-CLI & Dashboard (kai_cli.py)
+CLI & Dashboard (cai_cli.py)
     ├─→ Resource Detector
     ├─→ All Schedulers
     ├─→ Energy Feedback Controller

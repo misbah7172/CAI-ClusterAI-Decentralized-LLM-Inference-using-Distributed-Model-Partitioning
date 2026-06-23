@@ -14,24 +14,24 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: kai-monitor
+  name: CAI-monitor
   labels:
-    app: kai
+    app: CAI
     component: monitor
 spec:
   selector:
     matchLabels:
-      app: kai
+      app: CAI
       component: monitor
   template:
     metadata:
       labels:
-        app: kai
+        app: CAI
         component: monitor
     spec:
       containers:
         - name: monitor
-          image: kai-monitor:latest
+          image: CAI-monitor:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

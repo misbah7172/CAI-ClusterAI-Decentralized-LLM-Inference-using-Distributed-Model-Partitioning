@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-dark: #06080c;
+  --color-accent-blue: #38bdf8;
+  --color-accent-teal: #2dd4bf;
+  --color-accent-green: #10b981;
+  --color-brand-cyan: #00f0ff;
+  --color-brand-green: #00ff66;
+  --color-dark-card: #0c111a;
+  --color-dark-border: #1e293b;
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  
+  --animate-pulse-slow: pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-dash: dash 20s linear infinite;
+  --animate-glow-pulse: glow-pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+@keyframes glow-pulse {
+  0% {
+    text-shadow: 0 0 4px rgba(0, 240, 255, 0.2), 0 0 10px rgba(0, 240, 255, 0.1);
+  }
+  100% {
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #06080c;
+  color: #f8fafc;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Scrollbar Custom styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #06080c;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Custom Utilities */
+.circuit-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+}
+
+.circuit-dots {
+  background-image: radial-gradient(rgba(0, 240, 255, 0.15) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.glow-overlay-cyan {
+  background: radial-gradient(600px circle at 50% 50%, rgba(0, 240, 255, 0.08), transparent 80%);
+}
+
+.glow-overlay-green {
+  background: radial-gradient(600px circle at 50% 50%, rgba(0, 255, 102, 0.05), transparent 80%);
+}
+
+.glass-panel {
+  background: rgba(12, 17, 26, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-panel-hover:hover {
+  border-color: rgba(0, 240, 255, 0.25);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.05);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #00f0ff 0%, #00ff66 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

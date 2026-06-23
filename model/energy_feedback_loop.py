@@ -1,5 +1,5 @@
 """
-Energy Feedback Control Loop for KAI.
+Energy Feedback Control Loop for CAI.
 
 This module implements a production-oriented adaptive controller that monitors
 power, latency, throughput, memory pressure, and GPU utilization, then applies

@@ -1,8 +1,8 @@
-# KAI — Kubernetes AI Distributed Inference Platform
+# CAI — Kubernetes AI Distributed Inference Platform
 
 ## Project Overview
 
-KAI is a platform that enables running **large AI models on clusters of low-end PCs** using Kubernetes. Each node in the cluster loads only the model layers it is responsible for, so no single machine needs enough VRAM or RAM for the entire model.
+CAI is a platform that enables running **large AI models on clusters of low-end PCs** using Kubernetes. Each node in the cluster loads only the model layers it is responsible for, so no single machine needs enough VRAM or RAM for the entire model.
 
 ### Key Capabilities
 
@@ -15,9 +15,9 @@ KAI is a platform that enables running **large AI models on clusters of low-end 
 - **Dynamic Energy-Aware Scheduling (DEAS)** — Predictive and cost-aware scheduler that triggers on CRITICAL events and degradation trends, scores migrations by EER benefit minus cost/latency penalties, supports top-k multi-chunk plans, adaptive cooldown, and 5-step Pause/Checkpoint/Migrate/Relink/Resume execution.
 - **CPU/Disk Offloading** — FlexGen-style tiered weight management (GPU VRAM → System RAM → Disk) with double-buffered prefetching to hide transfer latency.
 - **Single-GPU Oversized Model Execution** — Runs models larger than available VRAM using layer streaming, preemptive OOM protection, adaptive batch sizing, runtime precision adaptation, and GPU memory pooling.
-- **Single-Command CLI** — `python kai_cli.py run --model <name> --prompt "Hello" --max-tokens 100`
+- **Single-Command CLI** — `python cai_cli.py run --model <name> --prompt "Hello" --max-tokens 100`
 - **Quantization** — Optional 4-bit (NF4) and 8-bit (INT8) quantization via bitsandbytes to reduce memory per chunk.
-- **Docker Build & Prepare** — `kai build` builds all Docker images; `kai prepare` downloads, chunks, and saves weights for K8s deployment.
+- **Docker Build & Prepare** — `CAI build` builds all Docker images; `CAI prepare` downloads, chunks, and saves weights for K8s deployment.
 
 ### Next-Generation Features (NEW)
 
@@ -46,9 +46,9 @@ KAI is a platform that enables running **large AI models on clusters of low-end 
 
 ### Quick Example
 
-### GPU Runtime (Required for KAI Efficiency Work)
+### GPU Runtime (Required for CAI Efficiency Work)
 
-KAI's optimization goals in this project require CUDA execution.
+CAI's optimization goals in this project require CUDA execution.
 
 ```bash
 # Verify CUDA runtime in the GPU environment
@@ -58,90 +58,90 @@ KAI's optimization goals in this project require CUDA execution.
 ./.venv310/Scripts/python -m streamlit run dashboard/comprehensive_dashboard.py
 
 # Or use the launcher (auto-prefers CUDA .venv310)
-python kai_cli_dashboard.py dashboard-pro
+python cai_cli_dashboard.py dashboard-pro
 ```
 
 If CUDA is unavailable, the dashboard will block generation in GPU-Only mode by default.
 
 ```bash
 # Scan your hardware
-python kai_cli.py scan
+python cai_cli.py scan
 
 # Preview how a model would be split across 3 nodes
-python kai_cli.py partition --model microsoft/phi-2 --num-nodes 3
+python cai_cli.py partition --model microsoft/phi-2 --num-nodes 3
 
 # Run distributed inference
-python kai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Once upon a time" --max-tokens 50 --stream
+python cai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Once upon a time" --max-tokens 50 --stream
 
 # Run with 4-bit quantization to reduce VRAM usage
-python kai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Hello" --quantize 4bit
+python cai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Hello" --quantize 4bit
 
 # Prepare chunk weights for K8s deployment
-python kai_cli.py prepare --model microsoft/phi-2 --num-chunks 3 --output-dir data/chunks
+python cai_cli.py prepare --model microsoft/phi-2 --num-chunks 3 --output-dir data/chunks
 
 # Build all Docker images
-python kai_cli.py build
+python cai_cli.py build
 
-# Run energy benchmark (original KAI workflow)
-python kai_cli.py benchmark --model transformer --mode local
+# Run energy benchmark (original CAI workflow)
+python cai_cli.py benchmark --model transformer --mode local
 
 # Benchmark a HuggingFace model directly
-python kai_cli.py benchmark --hf-model sshleifer/tiny-gpt2 --mode local
+python cai_cli.py benchmark --hf-model sshleifer/tiny-gpt2 --mode local
 
 # Benchmark with high-frequency GPU sampling (100ms)
-python kai_cli.py benchmark --hf-model sshleifer/tiny-gpt2 --mode local --sampling-rate 0.1
+python cai_cli.py benchmark --hf-model sshleifer/tiny-gpt2 --mode local --sampling-rate 0.1
 
 # Run with CPU/disk offloading for oversized models
-python kai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Hello" --offload --gpu-budget-mb 2000
+python cai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Hello" --offload --gpu-budget-mb 2000
 
 # === NEXT-GEN FEATURES ===
 
 # Auto-tune to find optimal configuration
-python kai_cli.py autotune --model sshleifer/tiny-gpt2 --objective energy --max-trials 20
+python cai_cli.py autotune --model sshleifer/tiny-gpt2 --objective energy --max-trials 20
 
 # Run with speculative decoding for faster inference
-python kai_cli.py speculative --model sshleifer/tiny-gpt2 --prompt "Hello" --speculation-length 5
+python cai_cli.py speculative --model sshleifer/tiny-gpt2 --prompt "Hello" --speculation-length 5
 
 # Run with hybrid parallelism (tensor + pipeline)
-python kai_cli.py hybrid --model sshleifer/tiny-gpt2 --prompt "Hello" --mode auto
+python cai_cli.py hybrid --model sshleifer/tiny-gpt2 --prompt "Hello" --mode auto
 
 # Generate intelligent placement plan
-python kai_cli.py placement --model microsoft/phi-2 --objective balanced
+python cai_cli.py placement --model microsoft/phi-2 --objective balanced
 
 # Start energy feedback control loop
-python kai_cli.py energy-loop --power-target 100 --latency-target 50 --daemon
+python cai_cli.py energy-loop --power-target 100 --latency-target 50 --daemon
 
 # Run with fault-tolerant pipeline
-python kai_cli.py fault-tolerant --model sshleifer/tiny-gpt2 --prompt "Hello"
+python cai_cli.py fault-tolerant --model sshleifer/tiny-gpt2 --prompt "Hello"
 
 # List available plugins
-python kai_cli.py plugins --action list
+python cai_cli.py plugins --action list
 
 # === PHASE 25 ALGORITHMS ===
 
 # FCIM worker selection analysis
-python kai_cli.py fcim --report
+python cai_cli.py fcim --report
 
 # ADSA adaptive scheduling
-python kai_cli.py adsa --policy adaptive --num-tasks 20 --show-metrics
+python cai_cli.py adsa --policy adaptive --num-tasks 20 --show-metrics
 
 # Batch processing configuration
-python kai_cli.py batch --max-batch-size 8 --strategy adaptive --show-status
+python cai_cli.py batch --max-batch-size 8 --strategy adaptive --show-status
 
 # Active inference controller
-python kai_cli.py active-inference --show-beliefs
+python cai_cli.py active-inference --show-beliefs
 
 # DFS scheduler with pruning
-python kai_cli.py dfs-scheduler --pruning bound --num-tasks 10 --num-workers 5
+python cai_cli.py dfs-scheduler --pruning bound --num-tasks 10 --num-workers 5
 
 # ILP/Heuristic scheduler
-python kai_cli.py ilp-scheduler --algorithm auto --num-tasks 20
+python cai_cli.py ilp-scheduler --algorithm auto --num-tasks 20
 
 # ONNX model conversion
-python kai_cli.py onnx --model sshleifer/tiny-gpt2 --output model.onnx --optimize
+python cai_cli.py onnx --model sshleifer/tiny-gpt2 --output model.onnx --optimize
 
 # Optimized simulation
-python kai_cli.py simulate --model sshleifer/tiny-gpt2 --optimization-level 2 --approximate-decode
+python cai_cli.py simulate --model sshleifer/tiny-gpt2 --optimization-level 2 --approximate-decode
 ```
 
 ---
@@ -171,7 +171,7 @@ python kai_cli.py simulate --model sshleifer/tiny-gpt2 --optimization-level 2 --
 
 ```
                     ┌─────────────┐
-                    │  kai_cli.py │
+                    │  cai_cli.py │
                     │  (CLI)      │
                     └──────┬──────┘
                            │
@@ -242,7 +242,7 @@ Ad hoc benchmarking produces inconsistent results. There is no turnkey system th
 
 ### Summary Table
 
-| Gap | Current State | What KAI Addresses |
+| Gap | Current State | What CAI Addresses |
 |-----|--------------|-------------------|
 | Energy-aware AI benchmarking | Not available in standard tools | Measures GPU power, energy (Wh), and correlates with latency/throughput |
 | Local vs. K8s comparison | No unified platform exists | Runs identical models in both modes under same conditions |
@@ -296,7 +296,7 @@ Ad hoc benchmarking produces inconsistent results. There is no turnkey system th
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd KAI
+cd CAI
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -319,7 +319,7 @@ python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
 ## Project Structure
 
 ```
-KAI/
+CAI/
 ├── model/                        # AI model definitions and chunking
 │   ├── transformer.py            #   Transformer encoder model
 │   ├── cnn.py                    #   CNN classification model
@@ -405,7 +405,7 @@ KAI/
 │   ├── SINGLE_GPU_AUDIT_AND_PLAN.md
 │   ├── SINGLE_GPU_IMPLEMENTATION_GUIDE.md
 │   └── SINGLE_GPU_EXECUTIVE_SUMMARY.md
-├── kai_cli.py                    # Unified CLI (run, scan, partition, benchmark, dashboard)
+├── cai_cli.py                    # Unified CLI (run, scan, partition, benchmark, dashboard)
 ├── requirements.txt
 ├── BUILD_GUIDE.md
 └── README.md
@@ -523,13 +523,13 @@ Deploy the chunked model to a Kubernetes cluster and run distributed inference:
 
 ```bash
 # Build chunk server image
-docker build -f docker/Dockerfile.chunk -t kai-chunk:latest .
+docker build -f docker/Dockerfile.chunk -t CAI-chunk:latest .
 
 # Build gateway image
-docker build -f docker/Dockerfile.gateway -t kai-gateway:latest .
+docker build -f docker/Dockerfile.gateway -t CAI-gateway:latest .
 
 # Build monitor image
-docker build -f docker/Dockerfile.monitor -t kai-monitor:latest .
+docker build -f docker/Dockerfile.monitor -t CAI-monitor:latest .
 ```
 
 ### 2. Deploy to Kubernetes
@@ -642,7 +642,7 @@ Ten plot types are generated as PNG files:
 
 ## Performance Enhancements & Telemetry
 
-KAI now includes comprehensive real-time performance monitoring, deterministic routing optimization, and production-grade telemetry collection. These enhancements replace synthetic network simulation with real measurements and provide deep visibility into every routing decision and inference execution.
+CAI now includes comprehensive real-time performance monitoring, deterministic routing optimization, and production-grade telemetry collection. These enhancements replace synthetic network simulation with real measurements and provide deep visibility into every routing decision and inference execution.
 
 ### Features
 
@@ -797,23 +797,23 @@ result = gateway.run_inference(input_tensor, model_name="my-model")
 
 ## Dashboard Usage
 
-KAI includes a unified 7-page web dashboard for managing every aspect of the platform — from running local AI models to deploying on Kubernetes clusters.
+CAI includes a unified 7-page web dashboard for managing every aspect of the platform — from running local AI models to deploying on Kubernetes clusters.
 
 ### Launching the Dashboard
 
 ```bash
 # Default: launches the unified dashboard
-python kai_cli.py dashboard
+python cai_cli.py dashboard
 
 # Specify a custom port
-python kai_cli.py dashboard --port 8502
+python cai_cli.py dashboard --port 8502
 
 # Legacy analysis-only dashboard
-python kai_cli.py dashboard --legacy
+python cai_cli.py dashboard --legacy
 
 ## Deterministic Low-Latency Routing (Gateway)
 
-KAI gateway supports deterministic route selection across multiple endpoint
+CAI gateway supports deterministic route selection across multiple endpoint
 candidates per chunk. This avoids random switching and minimizes expected
 inter-chunk latency.
 
@@ -826,13 +826,13 @@ CHUNK_HOSTS="chunk0-a:50051|chunk0-b:50051,chunk1-a:50051|chunk1-b:50051,chunk2-
 2. Enable deterministic latency policy:
 
 ```bash
-KAI_GATEWAY_ROUTE_POLICY=deterministic-latency
+CAI_GATEWAY_ROUTE_POLICY=deterministic-latency
 ```
 
 3. Optionally provide measured directional link costs:
 
 ```bash
-KAI_LINK_LATENCY_MS='{"chunk0-a:50051->chunk1-a:50051":0.35,"chunk0-b:50051->chunk1-a:50051":0.82}'
+CAI_LINK_LATENCY_MS='{"chunk0-a:50051->chunk1-a:50051":0.35,"chunk0-b:50051->chunk1-a:50051":0.82}'
 ```
 
 4. Inspect route state:
@@ -857,11 +857,11 @@ python -m kubernetes.controller deploy --num-chunks 3 --model transformer --rdma
 
 Optional environment knobs:
 
-- `KAI_RDMA_NODE_SELECTOR` (default: `rdma.capable=true`)
-- `KAI_CHUNK_NODE_SELECTOR` (extra selectors, e.g. `topology.kubernetes.io/zone=az1`)
-- `KAI_GATEWAY_NODE_SELECTOR` (pin gateway to low-latency node)
-- `KAI_NCCL_SOCKET_IFNAME` (e.g. `ib0`)
-- `KAI_NCCL_DEBUG` (default: `WARN`)
+- `CAI_RDMA_NODE_SELECTOR` (default: `rdma.capable=true`)
+- `CAI_CHUNK_NODE_SELECTOR` (extra selectors, e.g. `topology.kubernetes.io/zone=az1`)
+- `CAI_GATEWAY_NODE_SELECTOR` (pin gateway to low-latency node)
+- `CAI_NCCL_SOCKET_IFNAME` (e.g. `ib0`)
+- `CAI_NCCL_DEBUG` (default: `WARN`)
 
 Notes:
 
@@ -918,8 +918,8 @@ Five-step deployment workflow:
 1. **Prepare Weights** — Downloads a HuggingFace model, splits it into N chunks, saves weight files. Configure model name, chunk count, dtype, and output directory.
 2. **Build Docker Images** — Builds chunk server, gateway, and monitor Docker images. Optionally pushes to a registry.
 3. **Deploy Pipeline** — Deploys all K8s resources (chunk pods, gateway, monitor DaemonSet). Configure chunk count and model type.
-4. **Pod Status** — Shows current status of all KAI pods in the cluster.
-5. **Teardown** — Deletes all KAI resources from the cluster.
+4. **Pod Status** — Shows current status of all CAI pods in the cluster.
+5. **Teardown** — Deletes all CAI resources from the cluster.
 
 Each step shows real-time subprocess output so you can monitor progress.
 
@@ -963,23 +963,23 @@ Interactive visualization of benchmark results:
 
 ```bash
 # Use a custom results directory
-KAI_LOGS_DIR=path/to/results python kai_cli.py dashboard
+CAI_LOGS_DIR=path/to/results python cai_cli.py dashboard
 ```
 
 ---
 
 ## CLI Reference
 
-### KAI CLI (Distributed Inference)
+### CAI CLI (Distributed Inference)
 
 ```
-python kai_cli.py <command> [OPTIONS]
+python cai_cli.py <command> [OPTIONS]
 
 Commands:
   run          Generate text with a distributed HuggingFace model
   scan         Detect local GPU/CPU/RAM resources
   partition    Preview how a model would be split across nodes
-  benchmark    Run energy benchmarking (original KAI workflow)
+  benchmark    Run energy benchmarking (original CAI workflow)
   dashboard    Launch the Streamlit dashboard
   build        Build Docker images for chunk/gateway/monitor
   prepare      Download model, chunk weights, save for K8s deployment
@@ -997,7 +997,7 @@ Next-Gen Commands:
 #### `run` — Generate Text
 
 ```
-python kai_cli.py run --model <hf_model> --prompt "text" [OPTIONS]
+python cai_cli.py run --model <hf_model> --prompt "text" [OPTIONS]
 
 Options:
   --model         HuggingFace model name          (required)
@@ -1011,25 +1011,25 @@ Options:
   --quantize      Quantization mode (4bit/8bit)    (default: none)
   --offload       Enable CPU/disk offloading for models exceeding GPU VRAM
   --gpu-budget-mb GPU VRAM budget in MB            (default: 0 = auto-detect)
-  --disk-swap-dir Disk swap directory              (default: /tmp/kai_swap)
+  --disk-swap-dir Disk swap directory              (default: /tmp/cai_swap)
 ```
 
 #### `scan` — Detect Resources
 
 ```
-python kai_cli.py scan [--mode local|kubernetes]
+python cai_cli.py scan [--mode local|kubernetes]
 ```
 
 #### `partition` — Preview Layer Split
 
 ```
-python kai_cli.py partition --model <hf_model> --num-nodes N
+python cai_cli.py partition --model <hf_model> --num-nodes N
 ```
 
 #### `benchmark` — Energy Benchmarking
 
 ```
-python kai_cli.py benchmark [OPTIONS]
+python cai_cli.py benchmark [OPTIONS]
 
 Options:
   --model         transformer | cnn               (default: transformer)
@@ -1042,17 +1042,17 @@ Options:
 #### `build` — Build Docker Images
 
 ```
-python kai_cli.py build [OPTIONS]
+python cai_cli.py build [OPTIONS]
 
 Options:
-  --tag           Base image tag                   (default: kai:latest)
+  --tag           Base image tag                   (default: CAI:latest)
   --push          Push images after building
 ```
 
 #### `prepare` — Prepare Chunk Weights for K8s
 
 ```
-python kai_cli.py prepare --model <hf_model> [OPTIONS]
+python cai_cli.py prepare --model <hf_model> [OPTIONS]
 
 Options:
   --model         HuggingFace model name           (required)
@@ -1065,7 +1065,7 @@ Options:
 #### `dashboard` — Streamlit Dashboard
 
 ```
-python kai_cli.py dashboard [OPTIONS]
+python cai_cli.py dashboard [OPTIONS]
 
 Options:
   --port          Server port                       (default: 8501)
@@ -1077,7 +1077,7 @@ Options:
 #### `autotune` — Auto-Tune Configuration
 
 ```
-python kai_cli.py autotune --model <hf_model> [OPTIONS]
+python cai_cli.py autotune --model <hf_model> [OPTIONS]
 
 Options:
   --model           HuggingFace model name           (required)
@@ -1093,7 +1093,7 @@ Options:
 #### `speculative` — Speculative Decoding
 
 ```
-python kai_cli.py speculative --model <hf_model> --prompt "text" [OPTIONS]
+python cai_cli.py speculative --model <hf_model> --prompt "text" [OPTIONS]
 
 Options:
   --model              Main HuggingFace model        (required)
@@ -1107,7 +1107,7 @@ Options:
 #### `hybrid` — Hybrid Parallelism
 
 ```
-python kai_cli.py hybrid --model <hf_model> --prompt "text" [OPTIONS]
+python cai_cli.py hybrid --model <hf_model> --prompt "text" [OPTIONS]
 
 Options:
   --model           HuggingFace model name           (required)
@@ -1119,7 +1119,7 @@ Options:
 #### `placement` — Intelligent Placement
 
 ```
-python kai_cli.py placement --model <hf_model> [OPTIONS]
+python cai_cli.py placement --model <hf_model> [OPTIONS]
 
 Options:
   --model           HuggingFace model name           (required)
@@ -1130,7 +1130,7 @@ Options:
 #### `energy-loop` — Energy Feedback Control
 
 ```
-python kai_cli.py energy-loop [OPTIONS]
+python cai_cli.py energy-loop [OPTIONS]
 
 Options:
   --power-target    Target power consumption (W)     (default: 100.0)
@@ -1148,20 +1148,20 @@ Behavior:
 #### `fault-tolerant` — Fault-Tolerant Pipeline
 
 ```
-python kai_cli.py fault-tolerant --model <hf_model> --prompt "text" [OPTIONS]
+python cai_cli.py fault-tolerant --model <hf_model> --prompt "text" [OPTIONS]
 
 Options:
   --model               HuggingFace model name       (required)
   --prompt              Input prompt                  (required)
   --checkpoint-interval Checkpoint every N layers    (default: 5)
-  --checkpoint-dir      Checkpoint directory         (default: /tmp/kai_checkpoints)
+  --checkpoint-dir      Checkpoint directory         (default: /tmp/cai_checkpoints)
   --health-interval     Health check interval (s)    (default: 5.0)
 ```
 
 #### `plugins` — Plugin Management
 
 ```
-python kai_cli.py plugins [OPTIONS]
+python cai_cli.py plugins [OPTIONS]
 
 Options:
   --action          list | info                      (default: list)
@@ -1201,7 +1201,7 @@ Commands:
   health    Check gateway health
             --gateway-url URL
   metrics   Collect metrics from monitor service
-  teardown  Delete all KAI resources
+  teardown  Delete all CAI resources
 ```
 
 ### Analyzer
@@ -1413,7 +1413,7 @@ This project is for academic and research purposes.
 ## Implementation Status - 2026-04-28
 
 ### What Is Now Implemented
-- The production dashboard in dashboard/comprehensive_dashboard.py is the primary UX for running and validating KAI behavior.
+- The production dashboard in dashboard/comprehensive_dashboard.py is the primary UX for running and validating CAI behavior.
 - Live Inference uses asynchronous execution with responsive stop controls and per-run history.
 - KV telemetry is wired to measured runtime counters instead of placeholders.
 - Live GPU telemetry is active with NVML-first sampling and nvidia-smi fallback.
@@ -1434,7 +1434,7 @@ This project is for academic and research purposes.
 ./.venv310/Scripts/python -m streamlit run dashboard/comprehensive_dashboard.py
 
 # Optional launcher
-python kai_cli_dashboard.py dashboard-pro
+python cai_cli_dashboard.py dashboard-pro
 ```
 
 ### Reader Note

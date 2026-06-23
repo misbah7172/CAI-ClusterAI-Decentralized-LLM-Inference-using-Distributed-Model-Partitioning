@@ -15,28 +15,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kai-chunk-0
+  name: CAI-chunk-0
   labels:
-    app: kai
+    app: CAI
     component: chunk
     chunk-id: "0"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kai
+      app: CAI
       component: chunk
       chunk-id: "0"
   template:
     metadata:
       labels:
-        app: kai
+        app: CAI
         component: chunk
         chunk-id: "0"
     spec:
       containers:
         - name: chunk-server
-          image: kai-chunk:latest
+          image: CAI-chunk:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: grpc
@@ -106,7 +106,7 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchLabels:
-                    app: kai
+                    app: CAI
                     component: chunk
                 topologyKey: kubernetes.io/hostname
       # Tolerate GPU-tainted nodes

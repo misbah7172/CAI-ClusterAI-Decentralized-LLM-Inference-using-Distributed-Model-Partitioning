@@ -1,6 +1,6 @@
-# KAI Unified Dashboard — User Guide
+# CAI Unified Dashboard — User Guide
 
-Complete guide for the KAI Unified Control Dashboard, a 7-page Streamlit web application that lets you manage every aspect of the KAI distributed AI inference platform from a single interface.
+Complete guide for the CAI Unified Control Dashboard, a 7-page Streamlit web application that lets you manage every aspect of the CAI distributed AI inference platform from a single interface.
 
 ---
 
@@ -42,10 +42,10 @@ If this prints your GPU name (e.g. `NVIDIA GeForce RTX 3060 Ti`), you're ready.
 
 ```bash
 # Standard launch (opens browser automatically)
-python kai_cli.py dashboard
+python cai_cli.py dashboard
 
 # Custom port
-python kai_cli.py dashboard --port 8502
+python cai_cli.py dashboard --port 8502
 
 # Or run directly with Streamlit
 streamlit run dashboard/unified_app.py
@@ -159,7 +159,7 @@ For production clusters, install the [NVIDIA K8s device plugin](https://github.c
 - Output directory defaults to `data/chunks`
 
 #### Step 2: Build Docker Images
-- Set image tag (e.g. `kai:latest`)
+- Set image tag (e.g. `CAI:latest`)
 - Optionally enable "Push after build" for remote registries
 - Click **"Build Images"** — builds chunk server, gateway, and monitor images
 
@@ -168,10 +168,10 @@ For production clusters, install the [NVIDIA K8s device plugin](https://github.c
 - Click **"Deploy All"** — creates K8s deployments, services, and DaemonSets
 
 #### Step 4: Pod Status
-- Click **"Refresh Status"** to see all KAI pods and their states (Running, Pending, etc.)
+- Click **"Refresh Status"** to see all CAI pods and their states (Running, Pending, etc.)
 
 #### Step 5: Teardown
-- Click **"Teardown All"** to delete all KAI resources from the cluster
+- Click **"Teardown All"** to delete all CAI resources from the cluster
 - This removes all deployments, services, and pods
 
 Each step shows real-time logs so you can track progress.
@@ -265,7 +265,7 @@ Go to **Run Inference** page, select a model, and click **"Load model info"**. T
 
 ```bash
 # Download and cache a model (generates one token to trigger full download)
-python kai_cli.py run --model sshleifer/tiny-gpt2 --prompt "test" --max-tokens 1 --device cpu
+python cai_cli.py run --model sshleifer/tiny-gpt2 --prompt "test" --max-tokens 1 --device cpu
 ```
 
 ### Method 3: Using Python directly
@@ -315,7 +315,7 @@ Once downloaded, models are cached at `~/.cache/huggingface/hub/`. To run fully 
 set HF_HUB_OFFLINE=1
 
 # Now run inference using only cached models
-python kai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Hello" --max-tokens 50
+python cai_cli.py run --model sshleifer/tiny-gpt2 --prompt "Hello" --max-tokens 50
 ```
 
 ### Cache Management
@@ -418,7 +418,7 @@ huggingface-cli login
 - Launch dashboard with CUDA runtime:
   - ./.venv310/Scripts/python -m streamlit run dashboard/comprehensive_dashboard.py
 - Optional launcher command:
-  - python kai_cli_dashboard.py --port 8511 dashboard-pro
+  - python cai_cli_dashboard.py --port 8511 dashboard-pro
 
 ### Live GPU Telemetry (Implemented)
 - Real-time panel now shows:
@@ -456,6 +456,6 @@ huggingface-cli login
 ### Change Artifacts
 - Updated implementation files include:
   - dashboard/comprehensive_dashboard.py
-  - kai_cli_dashboard.py
+  - cai_cli_dashboard.py
   - README.md
 - Documentation synchronized with current implemented state as of this update.

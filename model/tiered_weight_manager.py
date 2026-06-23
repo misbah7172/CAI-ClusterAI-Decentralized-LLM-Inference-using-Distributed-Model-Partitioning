@@ -89,7 +89,7 @@ class TieredWeightManager:
         self,
         gpu_budget_mb: float,
         ram_budget_mb: float,
-        disk_dir: str = "/tmp/kai_swap",
+        disk_dir: str = "/tmp/cai_swap",
         device: str = "cuda:0",
     ):
         self._device = device

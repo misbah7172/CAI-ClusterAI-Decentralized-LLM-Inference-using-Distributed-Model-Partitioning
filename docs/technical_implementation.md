@@ -1,13 +1,13 @@
-# KAI Technical Implementation Details
+# CAI Technical Implementation Details
 
 ## Architecture Overview
 
-The KAI (Kubernetes AI Inference Platform) codebase is organized into modular components that work together to optimize distributed LLM inference across heterogeneous clusters.
+The CAI (Kubernetes AI Inference Platform) codebase is organized into modular components that work together to optimize distributed LLM inference across heterogeneous clusters.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     User Interface Layer                         │
-│  CLI (kai_cli.py) | Dashboard (unified_app.py) | K8s (ctr.py)   │
+│  CLI (cai_cli.py) | Dashboard (unified_app.py) | K8s (ctr.py)   │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
 ┌──────────────────────┴──────────────────────────────────────────┐
@@ -779,7 +779,7 @@ Based on component design:
 
 ```yaml
 Components:
-- KAI Operator: Manages inference deployments
+- CAI Operator: Manages inference deployments
 - Node Affinity: Places chunks on compatible nodes
 - Resource Quotas: Enforces memory/CPU limits
 - Scaling: Horizontal scaling based on load
@@ -788,7 +788,7 @@ Components:
 
 **Deployment Example**:
 ```yaml
-apiVersion: kai.greencluster.io/v1alpha1
+apiVersion: CAI.greencluster.io/v1alpha1
 kind: InferenceDeployment
 metadata:
   name: llama-7b

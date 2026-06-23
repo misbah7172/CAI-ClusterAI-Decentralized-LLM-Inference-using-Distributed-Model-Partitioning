@@ -148,7 +148,7 @@ for step in range(max_tokens):
 
 ---
 
-## INTEGRATION WITH EXISTING KAI SYSTEM
+## INTEGRATION WITH EXISTING CAI SYSTEM
 
 ### 1. Update generation.py
 
@@ -238,14 +238,14 @@ def compute_action(self, metrics):
     return self._combine_actions([power_action, latency_action])
 ```
 
-### 3. Update KAI Controller
+### 3. Update CAI Controller
 
 Enhance the Kubernetes controller to support single-GPU:
 
 ```python
 # kubernetes/controller.py
 
-class KAIController:
+class CAIController:
     def __init__(self, mode: str = "distributed"):
         """
         Parameters
@@ -529,7 +529,7 @@ logger.setLevel(logging.DEBUG)
 - [ ] Deploy runtime_precision_manager.py to model/
 - [ ] Update generation.py to use LayerStreamer
 - [ ] Update energy_feedback_loop.py with memory control actions
-- [ ] Update KAI controller for single-GPU mode
+- [ ] Update CAI controller for single-GPU mode
 - [ ] Test on small model (GPT-2) first
 - [ ] Test on large model (Llama-2 7B) next
 - [ ] Profile memory usage

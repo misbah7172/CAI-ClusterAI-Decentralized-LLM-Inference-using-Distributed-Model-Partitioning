@@ -40,7 +40,7 @@ from typing import Any, Dict, List, Optional
 import torch
 
 # ---------------------------------------------------------------------------
-# Import KAIController — handle the kubernetes/ directory name collision
+# Import CAIController — handle the kubernetes/ directory name collision
 # with the ``kubernetes`` pip package exactly like controller.py itself does.
 # ---------------------------------------------------------------------------
 
@@ -52,11 +52,11 @@ _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 import importlib.util as _ilu
 
 _controller_path = os.path.join(_project_root, "kubernetes", "controller.py")
-_spec = _ilu.spec_from_file_location("kai_controller", _controller_path)
+_spec = _ilu.spec_from_file_location("cai_controller", _controller_path)
 _mod = _ilu.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
 
-KAIController = _mod.KAIController
+CAIController = _mod.CAIController
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +155,7 @@ def run_k8s_experiment(
     )
 
     # --- Initialise controller ---
-    ctrl = KAIController()
+    ctrl = CAIController()
 
     # --- Deploy full pipeline ---
     logger.info("Deploying pipeline (%d chunks, model=%s)...", num_chunks, model_type)

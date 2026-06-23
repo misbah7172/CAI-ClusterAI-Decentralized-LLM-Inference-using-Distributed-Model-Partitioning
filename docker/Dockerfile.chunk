@@ -2,14 +2,14 @@
 # Dockerfile.chunk
 # Container for a single model-chunk gRPC server.
 # -------------------------------------------------
-# Build context: repository root (c:\CODE\KAI or /app)
+# Build context: repository root (c:\CODE\CAI or /app)
 # Usage:
-#   docker build -f docker/Dockerfile.chunk -t kai-chunk .
+#   docker build -f docker/Dockerfile.chunk -t CAI-chunk .
 #   docker run --gpus '"device=0"' \
 #     -e CHUNK_ID=0 -e NUM_CHUNKS=3 -e MODEL_TYPE=transformer \
 #     -e WEIGHTS_DIR=/data/chunks -e PORT=50051 \
 #     -v $(pwd)/data/chunks:/data/chunks \
-#     -p 50051:50051 kai-chunk
+#     -p 50051:50051 CAI-chunk
 # -------------------------------------------------
 
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04

@@ -8,8 +8,8 @@ from pathlib import Path
 from textwrap import dedent
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_REPO_URL = "https://github.com/misbah7172/GreenCluster-AI-KAI.git"
-DEFAULT_WORKSPACE = "/opt/kai"
+DEFAULT_REPO_URL = "https://github.com/misbah7172/GreenCluster-AI-CAI.git"
+DEFAULT_WORKSPACE = "/opt/CAI"
 DEFAULT_WSL_DISTRO = "Ubuntu-22.04"
 
 
@@ -84,7 +84,7 @@ def linux_primary_script(workspace: str, repo_url: str, server_ip: str, token_pa
         sudo cat /var/lib/rancher/k3s/server/node-token | tee {quote(token_path)}
 
         echo
-        echo "KAI primary node is ready."
+        echo "CAI primary node is ready."
         echo "K3S_URL=https://{server_ip}:6443"
         echo "K3S_TOKEN=$(cat {quote(token_path)})"
         echo "Token saved to: {token_path}"
@@ -104,7 +104,7 @@ def linux_worker_script(workspace: str, repo_url: str, server_url: str, token: s
         curl -sfL https://get.k3s.io | K3S_URL="$K3S_URL" K3S_TOKEN="$K3S_TOKEN" sh -
 
         echo
-        echo "KAI worker node joined successfully."
+        echo "CAI worker node joined successfully."
         echo "Connected to: $K3S_URL"
         """
     ).strip()

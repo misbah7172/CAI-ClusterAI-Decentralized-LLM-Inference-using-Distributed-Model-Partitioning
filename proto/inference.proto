@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package kai;
+package CAI;
 
 // Service exposed by each model chunk container.
 // The gateway (or the previous chunk in the pipeline) calls Infer()

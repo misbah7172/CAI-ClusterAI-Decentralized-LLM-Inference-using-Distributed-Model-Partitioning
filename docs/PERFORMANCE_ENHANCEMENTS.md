@@ -1,8 +1,8 @@
-# KAI Performance Enhancements & Telemetry Guide
+# CAI Performance Enhancements & Telemetry Guide
 
 ## Overview
 
-This guide demonstrates the comprehensive performance enhancements implemented in KAI, including:
+This guide demonstrates the comprehensive performance enhancements implemented in CAI, including:
 
 1. **Real Latency Probing** — Replaces synthetic metrics with actual network measurements
 2. **Performance Telemetry Collection** — Tracks routing decisions, inference metrics, and network latency
@@ -711,7 +711,7 @@ All code is production-ready, fully integrated, and can scale to large deploymen
 - Launch dashboard with CUDA runtime:
   - ./.venv310/Scripts/python -m streamlit run dashboard/comprehensive_dashboard.py
 - Optional launcher command:
-  - python kai_cli_dashboard.py --port 8511 dashboard-pro
+  - python cai_cli_dashboard.py --port 8511 dashboard-pro
 
 ### Live GPU Telemetry (Implemented)
 - Real-time panel now shows:
@@ -749,6 +749,6 @@ All code is production-ready, fully integrated, and can scale to large deploymen
 ### Change Artifacts
 - Updated implementation files include:
   - dashboard/comprehensive_dashboard.py
-  - kai_cli_dashboard.py
+  - cai_cli_dashboard.py
   - README.md
 - Documentation synchronized with current implemented state as of this update.

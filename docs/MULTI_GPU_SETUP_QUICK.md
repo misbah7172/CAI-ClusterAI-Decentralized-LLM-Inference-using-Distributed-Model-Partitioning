@@ -1,4 +1,4 @@
-# KAI Multi-GPU Setup — Quick Start (2 Laptops)
+# CAI Multi-GPU Setup — Quick Start (2 Laptops)
 
 Connect your **RTX 3050 Ti (3.9GB)** laptop and **MX350 (2GB)** laptop to run distributed inference across both GPUs.
 
@@ -11,19 +11,19 @@ Connect your **RTX 3050 Ti (3.9GB)** laptop and **MX350 (2GB)** laptop to run di
 ### Prerequisites
 - Both laptops on **same Wi-Fi or Ethernet network**
 - Both have NVIDIA drivers installed
-- Both have KAI installed (same code, same Python venv)
+- Both have CAI installed (same code, same Python venv)
 
-### Step 1: Install KAI on Both Laptops
+### Step 1: Install CAI on Both Laptops
 
 **On Laptop 2 (MX350):**
 
 ```bash
-# Clone or copy KAI to Laptop 2
+# Clone or copy CAI to Laptop 2
 cd d:\
-git clone https://github.com/misbah7172/GreenCluster-AI-KAI.git KAI
+git clone https://github.com/misbah7172/GreenCluster-AI-CAI.git CAI
 
 # Create CUDA environment
-cd KAI
+cd CAI
 python -m venv .venv310
 .\.venv310\Scripts\activate.ps1
 pip install -r requirements.txt
@@ -32,12 +32,12 @@ pip install -r requirements.txt
 ### Step 2: Verify GPU Detection on Laptop 2
 
 ```bash
-d:\CODE\KAI\.venv310\Scripts\python.exe kai_cli.py scan
+d:\CODE\CAI\.venv310\Scripts\python.exe cai_cli.py scan
 ```
 
 Expected output:
 ```
-[KAI] Scanning resources (mode=local)...
+[CAI] Scanning resources (mode=local)...
 Cluster Summary:
   Nodes: 1
   GPU nodes: 1
@@ -52,7 +52,7 @@ Cluster Summary:
 Test Laptop 2 independently first:
 
 ```bash
-d:\CODE\KAI\.venv310\Scripts\python.exe kai_cli.py run \
+d:\CODE\CAI\.venv310\Scripts\python.exe cai_cli.py run \
   --model openai-community/gpt2 \
   --prompt "Hello from MX350" \
   --max-tokens 32 \
@@ -141,27 +141,27 @@ kubectl get nodes -L nvidia.com/gpu
 **On Laptop 1:**
 
 ```bash
-cd D:\CODE\KAI
+cd D:\CODE\CAI
 
-# Build KAI images
-python kai_cli.py build --tag kai:latest
+# Build CAI images
+python cai_cli.py build --tag CAI:latest
 
 # Export images to files
-docker save kai-chunk:latest -o kai-chunk.tar
-docker save kai-gateway:latest -o kai-gateway.tar
-docker save kai-monitor:latest -o kai-monitor.tar
+docker save CAI-chunk:latest -o CAI-chunk.tar
+docker save CAI-gateway:latest -o CAI-gateway.tar
+docker save CAI-monitor:latest -o CAI-monitor.tar
 ```
 
 **Copy to Laptop 2 (via SCP or USB):**
 
 ```bash
 # On Laptop 2, import images:
-docker load -i kai-chunk.tar
-docker load -i kai-gateway.tar
-docker load -i kai-monitor.tar
+docker load -i CAI-chunk.tar
+docker load -i CAI-gateway.tar
+docker load -i CAI-monitor.tar
 
 # Verify images are loaded
-docker images | grep kai
+docker images | grep CAI
 ```
 
 ### Step 5: Deploy Model Across Both Nodes
@@ -170,17 +170,17 @@ docker images | grep kai
 
 ```bash
 # Partition a small model into 2 chunks (one per GPU)
-python kai_cli.py prepare --model openai-community/gpt2 --num-chunks 2
+python cai_cli.py prepare --model openai-community/gpt2 --num-chunks 2
 
 # Deploy to Kubernetes (splits across nodes automatically)
 python -m kubernetes.controller deploy --num-chunks 2 --model openai-community/gpt2
 
 # Verify pods are spread across nodes
-kubectl get pods -n kai -o wide
+kubectl get pods -n CAI -o wide
 # NAME                 READY   STATUS    NODE            IP
-# kai-chunk-0-xxxx     1/1     Running   laptop1-wsl2    10.x.x.x
-# kai-chunk-1-xxxx     1/1     Running   laptop2-wsl2    10.x.x.x
-# kai-gateway-xxxx     1/1     Running   laptop1-wsl2    10.x.x.x
+# CAI-chunk-0-xxxx     1/1     Running   laptop1-wsl2    10.x.x.x
+# CAI-chunk-1-xxxx     1/1     Running   laptop2-wsl2    10.x.x.x
+# CAI-gateway-xxxx     1/1     Running   laptop1-wsl2    10.x.x.x
 ```
 
 ### Step 6: Run Inference via Gateway
@@ -189,9 +189,9 @@ kubectl get pods -n kai -o wide
 
 ```bash
 # Find the gateway service IP
-kubectl get svc -n kai
+kubectl get svc -n CAI
 # NAME           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)
-# kai-gateway    ClusterIP   10.43.201.150   <none>        8080/TCP
+# CAI-gateway    ClusterIP   10.43.201.150   <none>        8080/TCP
 
 # Run inference through the gateway
 curl -X POST http://10.43.201.150:8080/infer \
@@ -296,7 +296,7 @@ kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.1
 **Recommended command for your setup:**
 
 ```bash
-python kai_cli.py run \
+python cai_cli.py run \
   --model mistralai/Mistral-7B-v0.1 \
   --prompt "Your prompt here" \
   --max-tokens 64 \
@@ -312,7 +312,7 @@ python kai_cli.py run \
 
 1. **Quick test:** Run Option 1 (Local Mode) first to verify both laptops work
 2. **Production setup:** Move to Option 2 (Kubernetes) for true distributed inference
-3. **Monitor energy:** Use KAI's energy-aware scheduling to balance load between GPUs
+3. **Monitor energy:** Use CAI's energy-aware scheduling to balance load between GPUs
 4. **Scale up:** Add more machines by repeating the worker node setup
 
 For detailed multi-node documentation, see [multiNodeSetup.md](./multiNodeSetup.md).

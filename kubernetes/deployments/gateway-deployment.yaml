@@ -12,25 +12,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kai-gateway
+  name: CAI-gateway
   labels:
-    app: kai
+    app: CAI
     component: gateway
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kai
+      app: CAI
       component: gateway
   template:
     metadata:
       labels:
-        app: kai
+        app: CAI
         component: gateway
     spec:
       containers:
         - name: gateway
-          image: kai-gateway:latest
+          image: CAI-gateway:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -43,7 +43,7 @@ spec:
             # Each chunk-N resolves via the ClusterIP Service
             # created in chunk-service.yaml.
             - name: CHUNK_HOSTS
-              value: "kai-chunk-0:50051,kai-chunk-1:50051,kai-chunk-2:50051"
+              value: "CAI-chunk-0:50051,CAI-chunk-1:50051,CAI-chunk-2:50051"
           resources:
             requests:
               cpu: "250m"

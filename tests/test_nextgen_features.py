@@ -1,5 +1,5 @@
 """
-Tests for KAI next-generation features.
+Tests for CAI next-generation features.
 
 Tests all 10 new modules:
 1. Plugin Architecture

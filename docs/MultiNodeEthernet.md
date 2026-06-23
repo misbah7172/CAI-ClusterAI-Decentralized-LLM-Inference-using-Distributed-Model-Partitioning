@@ -1,6 +1,6 @@
-# KAI Multi-Node Ethernet Setup
+# CAI Multi-Node Ethernet Setup
 
-This guide documents the step-by-step process for running KAI on two Windows laptops connected directly with an Ethernet cable. It is based on a primary laptop named `mighty` and a worker laptop named `bat-machine47`, but the same process works for any two machines.
+This guide documents the step-by-step process for running CAI on two Windows laptops connected directly with an Ethernet cable. It is based on a primary laptop named `mighty` and a worker laptop named `bat-machine47`, but the same process works for any two machines.
 
 ## Target Topology
 
@@ -31,7 +31,7 @@ Install or verify these on both laptops:
 - Ubuntu-22.04 WSL distro.
 - NVIDIA Windows driver installed.
 - Ethernet cable connected between both laptops.
-- A copy of the KAI repository on each laptop.
+- A copy of the CAI repository on each laptop.
 - Administrator PowerShell access.
 
 Check WSL:
@@ -89,7 +89,7 @@ Reply from 192.168.100.2
 On the primary laptop, open PowerShell as Administrator:
 
 ```powershell
-cd D:\CODE\KAI
+cd D:\CODE\CAI
 powershell -ExecutionPolicy Bypass -File scripts\windows\setup-primary.ps1 -ServerIp 192.168.100.1
 ```
 
@@ -98,7 +98,7 @@ The script installs dependencies in WSL, starts K3s, and writes the join token.
 Expected token location on the primary laptop:
 
 ```text
-D:\CODE\KAI\logs\k3s-node-token.txt
+D:\CODE\CAI\logs\k3s-node-token.txt
 ```
 
 If the token file is missing, check K3s inside WSL:
@@ -157,7 +157,7 @@ $service | wsl -d Ubuntu-22.04 -- sudo tee /etc/systemd/system/k3s.service > $nu
 Restart K3s and copy the token to the Windows repo folder:
 
 ```powershell
-wsl -d Ubuntu-22.04 -- bash -lc "sudo systemctl daemon-reload && sudo systemctl restart k3s && sleep 10 && sudo mkdir -p /root/.kai && sudo cat /var/lib/rancher/k3s/server/node-token | sudo tee /root/.kai/k3s-node-token.txt >/dev/null && cp /root/.kai/k3s-node-token.txt /mnt/d/CODE/KAI/logs/k3s-node-token.txt"
+wsl -d Ubuntu-22.04 -- bash -lc "sudo systemctl daemon-reload && sudo systemctl restart k3s && sleep 10 && sudo mkdir -p /root/.CAI && sudo cat /var/lib/rancher/k3s/server/node-token | sudo tee /root/.CAI/k3s-node-token.txt >/dev/null && cp /root/.CAI/k3s-node-token.txt /mnt/d/CODE/CAI/logs/k3s-node-token.txt"
 ```
 
 Verify the primary node:
@@ -178,7 +178,7 @@ $wslIp = (wsl -d Ubuntu-22.04 -- hostname -I).Trim().Split(" ")[0]
 netsh interface portproxy delete v4tov4 listenaddress=192.168.100.1 listenport=6444
 netsh interface portproxy add v4tov4 listenaddress=192.168.100.1 listenport=6444 connectaddress=$wslIp connectport=6444
 
-New-NetFirewallRule -DisplayName "KAI K3s API 6444" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 6444
+New-NetFirewallRule -DisplayName "CAI K3s API 6444" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 6444
 ```
 
 Verify:
@@ -203,19 +203,19 @@ Address         Port        Address         Port
 Copy this token file from the primary laptop:
 
 ```text
-D:\CODE\KAI\logs\k3s-node-token.txt
+D:\CODE\CAI\logs\k3s-node-token.txt
 ```
 
 to the worker repository folder, for example:
 
 ```text
-C:\Users\nurer\Desktop\KAI\GreenCluster-AI-KAI\logs\k3s-node-token.txt
+C:\Users\nurer\Desktop\CAI\GreenCluster-AI-CAI\logs\k3s-node-token.txt
 ```
 
 On the worker laptop, open PowerShell as Administrator from the worker repo folder:
 
 ```powershell
-cd C:\Users\nurer\Desktop\KAI\GreenCluster-AI-KAI
+cd C:\Users\nurer\Desktop\CAI\GreenCluster-AI-CAI
 ```
 
 Use the token-file command:
@@ -361,11 +361,11 @@ sudo k3s kubectl patch ds nvidia-device-plugin-daemonset -n kube-system --type=j
 sudo k3s kubectl rollout status ds/nvidia-device-plugin-daemonset -n kube-system --timeout=120s'
 ```
 
-If GPU capacity still does not appear, the cluster can still prove multi-node scheduling, but KAI GPU chunk pods will stay pending until Kubernetes advertises `nvidia.com/gpu`.
+If GPU capacity still does not appear, the cluster can still prove multi-node scheduling, but CAI GPU chunk pods will stay pending until Kubernetes advertises `nvidia.com/gpu`.
 
 ## 10.1 AMD or Non-NVIDIA Worker Nodes
 
-KAI's CUDA GPU path uses NVIDIA CUDA and Kubernetes advertises those devices as:
+CAI's CUDA GPU path uses NVIDIA CUDA and Kubernetes advertises those devices as:
 
 ```text
 nvidia.com/gpu
@@ -373,10 +373,10 @@ nvidia.com/gpu
 
 An AMD laptop GPU will not appear as `nvidia.com/gpu`. On Windows/WSL, AMD ROCm support is also not a drop-in replacement for the current CUDA path. Treat AMD laptops as CPU/RAM workers unless a separate ROCm runtime is added.
 
-For AMD, integrated GPU, or CPU-only worker nodes, deploy the KAI Kubernetes pipeline with CPU mode:
+For AMD, integrated GPU, or CPU-only worker nodes, deploy the CAI Kubernetes pipeline with CPU mode:
 
 ```powershell
-wsl -d Ubuntu-22.04 -- bash -lc "cd /opt/kai && source .venv310/bin/activate && python kubernetes/controller.py deploy --num-chunks 2 --model transformer --cpu-only --wait"
+wsl -d Ubuntu-22.04 -- bash -lc "cd /opt/CAI && source .venv310/bin/activate && python kubernetes/controller.py deploy --num-chunks 2 --model transformer --cpu-only --wait"
 ```
 
 CPU mode intentionally removes:
@@ -388,63 +388,63 @@ nvidia.com/gpu.present=true
 
 This lets chunk and monitor pods schedule on AMD/non-NVIDIA workers. It is slower than CUDA, but it will not damage the worker or the cluster. The default GPU deployment remains unchanged when `--cpu-only` is not used.
 
-## 11. Deploy KAI After GPU Capacity Appears
+## 11. Deploy CAI After GPU Capacity Appears
 
-Only run this when both nodes show GPU capacity or when the KAI deployment has been changed to CPU mode.
+Only run this when both nodes show GPU capacity or when the CAI deployment has been changed to CPU mode.
 
-Build KAI images:
+Build CAI images:
 
 ```powershell
-cd D:\CODE\KAI
-.\.venv310\Scripts\python.exe kai_cli.py build --tag kai:latest
+cd D:\CODE\CAI
+.\.venv310\Scripts\python.exe cai_cli.py build --tag CAI:latest
 ```
 
 For K3s/containerd, import images into the primary node:
 
 ```powershell
-wsl -d Ubuntu-22.04 -- bash -lc "cd /mnt/d/CODE/KAI && sudo k3s ctr images import kai-chunk.tar || true"
+wsl -d Ubuntu-22.04 -- bash -lc "cd /mnt/d/CODE/CAI && sudo k3s ctr images import CAI-chunk.tar || true"
 ```
 
 If using Docker image export, first create tar files:
 
 ```powershell
-docker save kai-chunk:latest -o kai-chunk.tar
-docker save kai-gateway:latest -o kai-gateway.tar
-docker save kai-monitor:latest -o kai-monitor.tar
+docker save CAI-chunk:latest -o CAI-chunk.tar
+docker save CAI-gateway:latest -o CAI-gateway.tar
+docker save CAI-monitor:latest -o CAI-monitor.tar
 ```
 
 Import into K3s on each node:
 
 ```bash
-sudo k3s ctr images import kai-chunk.tar
-sudo k3s ctr images import kai-gateway.tar
-sudo k3s ctr images import kai-monitor.tar
+sudo k3s ctr images import CAI-chunk.tar
+sudo k3s ctr images import CAI-gateway.tar
+sudo k3s ctr images import CAI-monitor.tar
 ```
 
-Deploy KAI:
+Deploy CAI:
 
 ```powershell
-wsl -d Ubuntu-22.04 -- bash -lc "cd /opt/kai && source .venv310/bin/activate && python kubernetes/controller.py deploy --num-chunks 2 --model transformer --wait"
+wsl -d Ubuntu-22.04 -- bash -lc "cd /opt/CAI && source .venv310/bin/activate && python kubernetes/controller.py deploy --num-chunks 2 --model transformer --wait"
 ```
 
 Verify pod placement:
 
 ```powershell
-wsl -d Ubuntu-22.04 -- sudo k3s kubectl get pods -n kai -o wide
+wsl -d Ubuntu-22.04 -- sudo k3s kubectl get pods -n CAI -o wide
 ```
 
 Expected goal:
 
 ```text
-kai-chunk-0   Running   mighty
-kai-chunk-1   Running   bat-machine47
-kai-gateway   Running   mighty
-kai-monitor   Running   ...
+CAI-chunk-0   Running   mighty
+CAI-chunk-1   Running   bat-machine47
+CAI-gateway   Running   mighty
+CAI-monitor   Running   ...
 ```
 
-## 12. Test KAI Gateway
+## 12. Test CAI Gateway
 
-KAI gateway uses NodePort `30080`.
+CAI gateway uses NodePort `30080`.
 
 Health check:
 
@@ -457,7 +457,7 @@ Inference request:
 ```powershell
 curl -X POST http://192.168.100.1:30080/infer `
   -H "Content-Type: application/json" `
-  -d '{"prompt":"Hello from KAI multi-node Ethernet","max_tokens":64}'
+  -d '{"prompt":"Hello from CAI multi-node Ethernet","max_tokens":64}'
 ```
 
 ## 13. Security Cleanup
@@ -500,10 +500,10 @@ GPU capacity:
 wsl -d Ubuntu-22.04 -- sudo k3s kubectl describe nodes | findstr /i "nvidia.com/gpu"
 ```
 
-KAI pods:
+CAI pods:
 
 ```powershell
-wsl -d Ubuntu-22.04 -- sudo k3s kubectl get pods -n kai -o wide
+wsl -d Ubuntu-22.04 -- sudo k3s kubectl get pods -n CAI -o wide
 ```
 
 K3s logs:

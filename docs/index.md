@@ -1,7 +1,7 @@
-# 📋 KAI Codebase Analysis - Documentation Index
+# 📋 CAI Codebase Analysis - Documentation Index
 
 **Analysis Date**: 2026-05-20  
-**Repository**: misbah7172/GreenCluster-AI-KAI  
+**Repository**: misbah7172/GreenCluster-AI-CAI  
 **Status**: ✅ Complete (23/24 features implemented)
 
 ---
@@ -120,7 +120,7 @@ Result: Understanding of design patterns and extensibility
 Result: Ready to deploy to production
 ```
 
-**Software Developer (New to KAI)**
+**Software Developer (New to CAI)**
 ```
 1. Quick read: FEATURE_QUICK_REFERENCE.md
 2. Deep dive: TECHNICAL_IMPLEMENTATION.md for system you're working on
@@ -346,7 +346,7 @@ All documents include:
 Refer to:
 - **Code Comments**: In-code docstrings (comprehensive)
 - **Test Cases**: In `tests/` directory (as usage examples)
-- **CLI Help**: `kai_cli.py --help` command
+- **CLI Help**: `cai_cli.py --help` command
 - **Dashboard**: `unified_app.py` for real-time monitoring
 - **Configuration**: YAML examples in code
 
@@ -379,7 +379,7 @@ You now have **four comprehensive documents** covering:
 - ✅ Performance characteristics
 - ✅ Integration points
 
-**Ready to**: Understand, deploy, optimize, and extend the KAI platform.
+**Ready to**: Understand, deploy, optimize, and extend the CAI platform.
 
 ---
 

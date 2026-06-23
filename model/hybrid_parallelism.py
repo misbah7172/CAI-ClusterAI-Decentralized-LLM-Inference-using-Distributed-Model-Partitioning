@@ -1,5 +1,5 @@
 """
-Hybrid Parallelism Engine for KAI.
+Hybrid Parallelism Engine for CAI.
 
 Combines pipeline parallelism (existing) with tensor parallelism:
 - Split attention layers across multiple GPUs
@@ -544,7 +544,7 @@ class HybridParallelismEngine:
         import time
         start_time = time.perf_counter()
 
-        # Chunked end-to-end mode: used by kai_cli.py and test fixtures that
+        # Chunked end-to-end mode: used by cai_cli.py and test fixtures that
         # construct the engine from a loader + cluster nodes.
         if self._chunk_mode:
             if inputs is None and module is not None and isinstance(module, torch.Tensor):

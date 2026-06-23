@@ -1,5 +1,5 @@
 """
-Modular Plugin Architecture for KAI.
+Modular Plugin Architecture for CAI.
 
 Enables pluggable subsystems for scheduler, optimizer, execution engine,
 and cache system. Each subsystem can be swapped without modifying core code.
@@ -55,7 +55,7 @@ class PluginMetadata:
 
 
 class PluginRegistry:
-    """Global registry for KAI plugins.
+    """Global registry for CAI plugins.
     
     Thread-safe singleton that maintains registered plugins by type and name.
     """
@@ -174,7 +174,7 @@ class PluginRegistry:
 # ---------------------------------------------------------------------------
 
 class BasePlugin(ABC):
-    """Base class for all KAI plugins."""
+    """Base class for all CAI plugins."""
     
     @property
     @abstractmethod
@@ -549,7 +549,7 @@ def load_plugins_from_directory(plugin_dir: str) -> int:
     for filename in os.listdir(plugin_dir):
         if filename.endswith(".py") and not filename.startswith("_"):
             filepath = os.path.join(plugin_dir, filename)
-            module_name = f"kai_plugin_{filename[:-3]}"
+            module_name = f"cai_plugin_{filename[:-3]}"
             
             try:
                 spec = importlib.util.spec_from_file_location(module_name, filepath)

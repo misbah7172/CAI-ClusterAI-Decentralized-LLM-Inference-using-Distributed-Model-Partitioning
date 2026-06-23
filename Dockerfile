@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-WORKDIR /workspace/KAI
+WORKDIR /workspace/CAI
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -21,12 +21,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-COPY docs/requirements.txt /tmp/kai-requirements.txt
+COPY docs/requirements.txt /tmp/CAI-requirements.txt
 
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu121
 RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install torch torchvision --index-url ${TORCH_INDEX_URL} && \
-    python -m pip install -r /tmp/kai-requirements.txt
+    python -m pip install -r /tmp/CAI-requirements.txt
 
 COPY . .
 

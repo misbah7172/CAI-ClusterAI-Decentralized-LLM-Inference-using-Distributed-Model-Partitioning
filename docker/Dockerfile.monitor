@@ -6,10 +6,10 @@
 # -------------------------------------------------
 # Build context: repository root
 # Usage:
-#   docker build -f docker/Dockerfile.monitor -t kai-monitor .
+#   docker build -f docker/Dockerfile.monitor -t CAI-monitor .
 #   docker run --gpus all \
 #     -e MONITOR_PORT=9090 -e GPU_INDEX=0 -e SAMPLE_INTERVAL=1.0 \
-#     -p 9090:9090 kai-monitor
+#     -p 9090:9090 CAI-monitor
 # -------------------------------------------------
 
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04

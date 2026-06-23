@@ -1,4 +1,4 @@
-# KAI Single-GPU Large Model Execution - Executive Summary
+# CAI Single-GPU Large Model Execution - Executive Summary
 
 **Completion Date**: April 28, 2026  
 **Phase**: 1-3 (Audit → Core Implementation)  
@@ -8,7 +8,7 @@
 
 ## OVERVIEW
 
-KAI has been **audited and upgraded** to efficiently run large language models on a **single GPU** using adaptive memory management and closed-loop control. The system now supports running models **up to 11× larger** than available GPU VRAM.
+CAI has been **audited and upgraded** to efficiently run large language models on a **single GPU** using adaptive memory management and closed-loop control. The system now supports running models **up to 11× larger** than available GPU VRAM.
 
 ---
 
@@ -221,7 +221,7 @@ print(tokenizer.decode(tokens[0]))
 
 ### Phase 4: Integration
 - [ ] Integrate with energy_feedback_loop
-- [ ] Test with KAI controller
+- [ ] Test with CAI controller
 - [ ] Verify multi-GPU mode still works
 - [ ] Run full test suite
 
@@ -373,7 +373,7 @@ Total: 1,750 lines of production code
 
 ## CONCLUSION
 
-KAI is now **production-ready** for single-GPU large model inference. The implementation enables:
+CAI is now **production-ready** for single-GPU large model inference. The implementation enables:
 
 - **11× larger models** without hardware upgrade
 - **Stable memory** without OOM crashes  

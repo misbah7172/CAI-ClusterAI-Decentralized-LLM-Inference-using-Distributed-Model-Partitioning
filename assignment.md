@@ -1,23 +1,23 @@
-# KAI Codebase Assignment
+# CAI Codebase Assignment
 
-This document summarizes the real implementation in the repository and how each subsystem improves KAI efficiency. I only included claims that are supported by code or repository documentation. When a term did not have a dedicated implementation, I marked it as docs-only or not found.
+This document summarizes the real implementation in the repository and how each subsystem improves CAI efficiency. I only included claims that are supported by code or repository documentation. When a term did not have a dedicated implementation, I marked it as docs-only or not found.
 
 ## 1. Core Efficiency Mechanisms
 
 ### Layer-wise churning
-- **Real implementation:** `model/layer_chunker.py`, `model/auto_partitioner.py`, `kai_cli.py partition`, `kai_cli.py run`
+- **Real implementation:** `model/layer_chunker.py`, `model/auto_partitioner.py`, `cai_cli.py partition`, `cai_cli.py run`
 - **How it works:** The model is split into contiguous chunks or layer assignments. `LayerChunker` builds chunk objects from Hugging Face model layers, while `AutoPartitioner` assigns layers across nodes based on usable GPU VRAM and RAM.
 - **Why it improves efficiency:** Each node loads only the layers it needs, reducing peak memory pressure and allowing larger models to run on smaller machines.
 - **Status:** Implemented.
 
 ### Smart auto partitioning
-- **Real implementation:** `model/auto_partitioner.py`, `model/resource_detector.py`, `kai_cli.py partition`
+- **Real implementation:** `model/auto_partitioner.py`, `model/resource_detector.py`, `cai_cli.py partition`
 - **How it works:** `AutoPartitioner.create_plan()` uses detected node resources to proportionally assign layers. It checks feasibility, keeps layers contiguous, and prefers more capable nodes.
 - **Why it improves efficiency:** Balances memory use across the cluster and reduces the risk of OOM or underutilized nodes.
 - **Status:** Implemented.
 
 ### Energy benchmarking
-- **Real implementation:** `dashboard/app.py`, `dashboard/comprehensive_dashboard.py`, `dashboard/telemetry_dashboard.py`, `kai_cli.py benchmark`
+- **Real implementation:** `dashboard/app.py`, `dashboard/comprehensive_dashboard.py`, `dashboard/telemetry_dashboard.py`, `cai_cli.py benchmark`
 - **How it works:** The dashboards compare latency, throughput, GPU power, and energy for local vs Kubernetes runs. The comprehensive dashboard also tracks live GPU telemetry and computes per-run energy metrics.
 - **Why it improves efficiency:** Makes energy cost visible and measurable, so configuration changes can be judged by actual power and latency impact.
 - **Status:** Implemented.
@@ -35,13 +35,13 @@ This document summarizes the real implementation in the repository and how each 
 - **Status:** Implemented.
 
 ### Hybrid Parallelism Engine
-- **Real implementation:** `model/hybrid_parallelism.py`, `kai_cli.py hybrid`
+- **Real implementation:** `model/hybrid_parallelism.py`, `cai_cli.py hybrid`
 - **How it works:** The engine combines pipeline parallelism with tensor parallelism. Attention can be split across devices while feed-forward layers stay in a pipeline flow.
 - **Why it improves efficiency:** Uses multiple GPUs more effectively and reduces per-device memory load.
 - **Status:** Implemented, but still research-oriented in style.
 
 ### Intelligent Model Placement
-- **Real implementation:** `model/intelligent_placement.py`, `kai_cli.py placement`
+- **Real implementation:** `model/intelligent_placement.py`, `cai_cli.py placement`
 - **How it works:** `IntelligentPlacementEngine.compute_placement()` chooses layer-to-node mappings using objective modes for latency, energy, memory, or a balanced mix. It considers node VRAM/RAM and network topology.
 - **Why it improves efficiency:** Places layers on the most suitable hardware and reduces expensive cross-node transfers.
 - **Status:** Implemented.
@@ -54,24 +54,24 @@ This document summarizes the real implementation in the repository and how each 
 
 ### Network-aware scheduling
 - **Real implementation:** `model/network_aware_scheduler.py`, `model/latency_probe.py`, `model/intelligent_placement.py`
-- **How it works:** `NetworkMonitor` tracks link latency and bandwidth, optionally using explicit overrides from `KAI_NETWORK_LINKS_JSON` or real probes. `NetworkAwareScheduler` uses those signals to avoid high-latency placements.
+- **How it works:** `NetworkMonitor` tracks link latency and bandwidth, optionally using explicit overrides from `CAI_NETWORK_LINKS_JSON` or real probes. `NetworkAwareScheduler` uses those signals to avoid high-latency placements.
 - **Why it improves efficiency:** Reduces transfer overhead and keeps dependent layers close together.
 - **Status:** Implemented.
 
 ### Energy feedback control loop
-- **Real implementation:** `model/energy_feedback_loop.py`, `model/deas_scheduler.py`, `kai_cli.py energy-loop`
+- **Real implementation:** `model/energy_feedback_loop.py`, `model/deas_scheduler.py`, `cai_cli.py energy-loop`
 - **How it works:** `EnergyFeedbackController` reads power, latency, throughput, memory pressure, and GPU utilization. It selects control actions such as batch changes, precision changes, power-limit changes, and offload toggles. `DEASScheduler.bind_energy_controller()` can consume controller signals and trigger rebalancing.
 - **Why it improves efficiency:** Makes the system adaptive instead of static, so it can respond to power spikes or throughput drops in real time.
 - **Status:** Implemented.
 
 ### Speculative decoding
-- **Real implementation:** `model/speculative_decoder.py`, `kai_cli.py speculative`
+- **Real implementation:** `model/speculative_decoder.py`, `cai_cli.py speculative`
 - **How it works:** A smaller draft model proposes tokens, and the main model verifies them. `AdaptiveSpeculativeDecoder` adjusts speculation length based on acceptance rate.
 - **Why it improves efficiency:** Reduces latency and GPU work on the main model when the draft model’s predictions are accepted often.
 - **Status:** Implemented.
 
 ### Fault-tolerant pipeline
-- **Real implementation:** `model/fault_tolerant_pipeline.py`, `kai_cli.py fault-tolerant`
+- **Real implementation:** `model/fault_tolerant_pipeline.py`, `cai_cli.py fault-tolerant`
 - **How it works:** The pipeline saves checkpoints, tracks node health, and supports recovery or reassignment when a node fails during inference.
 - **Why it improves efficiency:** Prevents wasted work and avoids restarting from scratch after failures.
 - **Status:** Implemented.
@@ -83,49 +83,49 @@ This document summarizes the real implementation in the repository and how each 
 - **Status:** Implemented.
 
 ### Auto-tuning benchmark system
-- **Real implementation:** `model/auto_tuner.py`, `kai_cli.py autotune`
+- **Real implementation:** `model/auto_tuner.py`, `cai_cli.py autotune`
 - **How it works:** The tuner searches a configuration space of chunk counts, precision modes, batch sizes, offload settings, and parallelism modes. It evaluates trials with objective functions such as latency, throughput, energy, memory, or balanced scoring.
 - **Why it improves efficiency:** Finds a better operating point than hand-tuned defaults.
 - **Status:** Implemented.
 
 ### ADSA
-- **Real implementation:** `model/adsa_scheduler.py`, `kai_cli.py adsa`
+- **Real implementation:** `model/adsa_scheduler.py`, `cai_cli.py adsa`
 - **How it works:** ADSA is an adaptive dynamic scheduler with multiple policies including FIFO, SJF, SRPT, weighted, and adaptive modes. It supports task aging, deadlines, and metrics tracking.
 - **Why it improves efficiency:** Reduces wait time and improves task ordering under mixed workloads.
 - **Status:** Implemented.
 
 ### Active Inference
-- **Real implementation:** `model/active_inference.py`, `kai_cli.py active-inference`
+- **Real implementation:** `model/active_inference.py`, `cai_cli.py active-inference`
 - **How it works:** The agent updates probabilistic beliefs from observations and selects actions by minimizing expected free energy. The control loop feeds actions back into the system.
 - **Why it improves efficiency:** Lets the system adapt using uncertainty-aware decisions instead of static heuristics.
 - **Status:** Implemented.
 
 ### Batch Processing
-- **Real implementation:** `model/batch_processor.py`, `model/adaptive_batch_controller.py`, `kai_cli.py batch`
+- **Real implementation:** `model/batch_processor.py`, `model/adaptive_batch_controller.py`, `cai_cli.py batch`
 - **How it works:** `BatchProcessor` supports fixed-size, fixed-time, adaptive, and continuous batching. `AdaptiveBatchController` grows or shrinks batch size based on observed latency and memory.
 - **Why it improves efficiency:** Increases throughput and better utilizes GPU capacity.
 - **Status:** Implemented.
 
 ### DFS scheduler with pruning
-- **Real implementation:** `model/dfs_scheduler.py`, `kai_cli.py dfs-scheduler`
+- **Real implementation:** `model/dfs_scheduler.py`, `cai_cli.py dfs-scheduler`
 - **How it works:** `DFSScheduler` explores task-to-worker assignments using DFS with alpha-beta style pruning, branch-and-bound, beam search, or heuristic pruning.
 - **Why it improves efficiency:** Searches a large scheduling space without enumerating every possibility.
 - **Status:** Implemented.
 
 ### ILP/Heuristic scheduler
-- **Real implementation:** `model/ilp_scheduler.py`, `kai_cli.py ilp-scheduler`
+- **Real implementation:** `model/ilp_scheduler.py`, `cai_cli.py ilp-scheduler`
 - **How it works:** `ILPSolver` builds a PuLP/CBC optimization model for task assignment, resource limits, dependencies, affinity, and anti-affinity. It falls back to heuristics when a solver is unavailable or the problem is too large.
 - **Why it improves efficiency:** Provides near-optimal scheduling for small systems and scalable approximations for larger ones.
 - **Status:** Implemented.
 
 ### PyTorch to ONNX conversion
-- **Real implementation:** `model/onnx_converter.py`, `kai_cli.py onnx`
+- **Real implementation:** `model/onnx_converter.py`, `cai_cli.py onnx`
 - **How it works:** The converter exports PyTorch models to ONNX, optionally optimizes the graph, can quantize dynamically, and validates the ONNX output against PyTorch.
 - **Why it improves efficiency:** Enables cross-platform deployment and runtime-optimized inference.
 - **Status:** Implemented.
 
 ### Simulation optimization
-- **Real implementation:** `model/simulation_optimizer.py`, `kai_cli.py simulate`
+- **Real implementation:** `model/simulation_optimizer.py`, `cai_cli.py simulate`
 - **How it works:** The simulation optimizer simplifies repeated layers, approximates decode steps, caches layer outputs, and can approximate attention for faster simulation runs.
 - **Why it improves efficiency:** Speeds up evaluation and experimentation by reducing simulation cost.
 - **Status:** Implemented.
@@ -158,7 +158,7 @@ This document summarizes the real implementation in the repository and how each 
 - **Status:** Mentioned in `README.md` and docs as "Tensor Parallel Interface", but there is no dedicated `model/tpi.py` or equivalent module.
 - **Note:** The underlying idea is represented in `model/hybrid_parallelism.py`, `model/auto_partitioner.py`, and related scheduling code.
 
-## 4. What Actually Improves KAI Efficiency in Practice
+## 4. What Actually Improves CAI Efficiency in Practice
 
 The most important real efficiency gains in this repository come from:
 

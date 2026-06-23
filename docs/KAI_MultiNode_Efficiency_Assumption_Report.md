@@ -1,10 +1,10 @@
-# KAI Multi-Node Efficiency Assumption Report
+# CAI Multi-Node Efficiency Assumption Report
 
 ## Purpose
 
-This report is a code-backed assumption analysis for KAI multi-node efficiency on a two-laptop cluster. It is intended for progress reporting before a full measured benchmark is available.
+This report is a code-backed assumption analysis for CAI multi-node efficiency on a two-laptop cluster. It is intended for progress reporting before a full measured benchmark is available.
 
-Important: the values in this report are projected estimates, not measured experimental results. They are designed to be realistic and defensible because they are based on the current KAI code paths, hardware constraints, and known memory/throughput behavior of quantized LLM inference. Do not present these numbers as final benchmark results.
+Important: the values in this report are projected estimates, not measured experimental results. They are designed to be realistic and defensible because they are based on the current CAI code paths, hardware constraints, and known memory/throughput behavior of quantized LLM inference. Do not present these numbers as final benchmark results.
 
 ## Hardware Assumption
 
@@ -13,7 +13,7 @@ Important: the values in this report are projected estimates, not measured exper
 | Node A | RTX 3050 Ti Laptop GPU, 4 GB | Intel i5 11th Gen H-series | 16 GB | 3.5 GB | Primary GPU/control node |
 | Node B | GTX 1080-class GPU, 2 GB as provided | Intel i5 10th Gen | 16 GB | 1.5 GB | Secondary worker/offload node |
 
-KAI code uses a conservative memory rule in `model/resource_detector.py`: GPU usable memory is approximately `VRAM - 500 MB`. CPU-only usable RAM is approximately `70% of RAM`.
+CAI code uses a conservative memory rule in `model/resource_detector.py`: GPU usable memory is approximately `VRAM - 500 MB`. CPU-only usable RAM is approximately `70% of RAM`.
 
 For this setup:
 
@@ -25,7 +25,7 @@ Combined usable memory pool for offload-aware execution = about 27.4 GB
 
 ## Codebase Basis
 
-The projection is based on these KAI modules:
+The projection is based on these CAI modules:
 
 | Code path | Efficiency role |
 |---|---|
@@ -36,7 +36,7 @@ The projection is based on these KAI modules:
 | `model/tiered_weight_manager.py` | Places weights across GPU VRAM, system RAM, and disk. |
 | `model/prefetch_engine.py` | Hides some RAM/disk transfer latency with double-buffered prefetching. |
 | `model/energy_feedback_loop.py` | Defines energy-per-token and efficiency scoring concepts. |
-| `kubernetes/controller.py` | Deploys KAI chunk/gateway/monitor pods. Current AMD-safe path is `--cpu-only`; NVIDIA GPU path requires `nvidia.com/gpu`. |
+| `kubernetes/controller.py` | Deploys CAI chunk/gateway/monitor pods. Current AMD-safe path is `--cpu-only`; NVIDIA GPU path requires `nvidia.com/gpu`. |
 
 ## Model Memory Assumptions
 
@@ -47,11 +47,11 @@ Approximate model weight sizes:
 | 7B | 14 GB | 7 GB | 3.5-4.5 GB | Feasible only with 4-bit plus offload on this cluster. |
 | 13B | 26 GB | 13 GB | 6.5-8.5 GB | Feasible only with aggressive 4-bit plus CPU/RAM offload; slow. |
 
-The KAI partitioner adds a rough 20% overhead in its layer memory estimate. KV cache, activations, tokenizer buffers, PyTorch allocator fragmentation, and gRPC serialization add additional pressure.
+The CAI partitioner adds a rough 20% overhead in its layer memory estimate. KV cache, activations, tokenizer buffers, PyTorch allocator fragmentation, and gRPC serialization add additional pressure.
 
 ## Efficiency Interpretation
 
-KAI is efficient in this setup mainly in memory feasibility, not raw speed. A single 4 GB GPU cannot comfortably host 7B or 13B models without quantization/offload. KAI improves feasibility by combining GPU VRAM, system RAM, disk offload, partitioning, and scheduling.
+CAI is efficient in this setup mainly in memory feasibility, not raw speed. A single 4 GB GPU cannot comfortably host 7B or 13B models without quantization/offload. CAI improves feasibility by combining GPU VRAM, system RAM, disk offload, partitioning, and scheduling.
 
 Expected benefits:
 
@@ -89,22 +89,22 @@ The estimates assume 4-bit quantization for 7B and 13B runs. FP16 is included on
 |---|---|---|
 | 7B FP16 single node | Not feasible | 14+ GB weights cannot fit in 4 GB VRAM. |
 | 7B INT4 single RTX with offload | Feasible but slow | Heavy CPU/RAM offload; acceptable for short demos. |
-| 7B INT4 KAI two-node | Feasible | Better memory distribution, modest throughput gain if second node can execute chunks. |
+| 7B INT4 CAI two-node | Feasible | Better memory distribution, modest throughput gain if second node can execute chunks. |
 | 13B FP16 single node | Not feasible | 26+ GB weights exceed local GPU/RAM comfort. |
 | 13B INT4 single RTX with offload | Marginal | Can run only with aggressive offload and low token count. |
-| 13B INT4 KAI two-node | Marginal/Research-only | Feasible as a demonstration of large-model orchestration, not fast inference. |
+| 13B INT4 CAI two-node | Marginal/Research-only | Feasible as a demonstration of large-model orchestration, not fast inference. |
 
 ## Key Result for Professor Update
 
-KAI's projected multi-node value on the given hardware is strongest for memory feasibility:
+CAI's projected multi-node value on the given hardware is strongest for memory feasibility:
 
 ```text
 7B model: projected from single-node offload demo to distributed/offload demo with about 25-35% better tokens/sec and 25-30% lower peak VRAM pressure on the primary node.
 13B model: projected from barely feasible single-node offload to research-feasible multi-node/offload execution, but still slow due to low VRAM and Ethernet overhead.
 ```
 
-The CSV file `KAI_MultiNode_Efficiency_Assumption_Report.csv` contains the structured scenario estimates.
+The CSV file `CAI_MultiNode_Efficiency_Assumption_Report.csv` contains the structured scenario estimates.
 
 ## Submission Note
 
-Use the wording `projected`, `estimated`, or `assumption-based` when showing this data. The dataset is suitable for explaining expected KAI behavior and experimental design, but it should be replaced by measured CSV logs after the cluster runs successfully.
+Use the wording `projected`, `estimated`, or `assumption-based` when showing this data. The dataset is suitable for explaining expected CAI behavior and experimental design, but it should be replaced by measured CSV logs after the cluster runs successfully.

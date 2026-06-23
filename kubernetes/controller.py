@@ -1,5 +1,5 @@
 """
-Kubernetes controller for the KAI inference pipeline.
+Kubernetes controller for the CAI inference pipeline.
 
 Automates deployment, readiness polling, inference requests,
 metrics collection, and teardown of the distributed model-chunk
@@ -12,7 +12,7 @@ Functions:
     wait_for_ready(timeout)          -- Poll until all pods are Running
     send_inference_request(data)     -- POST tensor to the gateway
     collect_metrics()                -- GET metrics from all monitor pods
-    teardown()                       -- Delete all KAI resources
+    teardown()                       -- Delete all CAI resources
 
 Usage::
 
@@ -59,11 +59,11 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-NAMESPACE = "kai"
-APP_LABEL = "kai"
-CHUNK_IMAGE = "kai-chunk:latest"
-GATEWAY_IMAGE = "kai-gateway:latest"
-MONITOR_IMAGE = "kai-monitor:latest"
+NAMESPACE = "CAI"
+APP_LABEL = "CAI"
+CHUNK_IMAGE = "CAI-chunk:latest"
+GATEWAY_IMAGE = "CAI-gateway:latest"
+MONITOR_IMAGE = "CAI-monitor:latest"
 GRPC_PORT = 50051
 GATEWAY_PORT = 8080
 GATEWAY_NODE_PORT = 30080
@@ -141,7 +141,7 @@ def _build_chunk_deployment(
 ) -> client.V1Deployment:
     """Build a Deployment object for a single model chunk."""
 
-    name = f"kai-chunk-{chunk_id}"
+    name = f"CAI-chunk-{chunk_id}"
     labels = {
         "app": APP_LABEL,
         "component": "chunk",
@@ -155,16 +155,16 @@ def _build_chunk_deployment(
         client.V1EnvVar(name="WEIGHTS_DIR", value="/data/chunks"),
         client.V1EnvVar(name="PORT", value=str(GRPC_PORT)),
         client.V1EnvVar(name="DEVICE", value="cpu" if cpu_only else "cuda:0"),
-        client.V1EnvVar(name="KAI_ACCELERATOR_MODE", value="cpu" if cpu_only else "nvidia"),
+        client.V1EnvVar(name="CAI_ACCELERATOR_MODE", value="cpu" if cpu_only else "nvidia"),
     ]
 
     if nccl_enabled:
         chunk_env.extend([
             client.V1EnvVar(name="NCCL_IB_DISABLE", value="0" if rdma_enabled else "1"),
             client.V1EnvVar(name="NCCL_ASYNC_ERROR_HANDLING", value="1"),
-            client.V1EnvVar(name="NCCL_DEBUG", value=os.environ.get("KAI_NCCL_DEBUG", "WARN")),
+            client.V1EnvVar(name="NCCL_DEBUG", value=os.environ.get("CAI_NCCL_DEBUG", "WARN")),
         ])
-        iface = os.environ.get("KAI_NCCL_SOCKET_IFNAME", "")
+        iface = os.environ.get("CAI_NCCL_SOCKET_IFNAME", "")
         if iface:
             chunk_env.append(client.V1EnvVar(name="NCCL_SOCKET_IFNAME", value=iface))
 
@@ -203,9 +203,9 @@ def _build_chunk_deployment(
     )
 
     node_selector = {} if cpu_only else {"nvidia.com/gpu.present": "true"}
-    node_selector.update(_parse_node_selector(os.environ.get("KAI_CHUNK_NODE_SELECTOR", "")))
+    node_selector.update(_parse_node_selector(os.environ.get("CAI_CHUNK_NODE_SELECTOR", "")))
     if rdma_enabled:
-        node_selector.update(_parse_node_selector(os.environ.get("KAI_RDMA_NODE_SELECTOR", "rdma.capable=true")))
+        node_selector.update(_parse_node_selector(os.environ.get("CAI_RDMA_NODE_SELECTOR", "rdma.capable=true")))
 
     template = client.V1PodTemplateSpec(
         metadata=client.V1ObjectMeta(labels=labels),
@@ -238,7 +238,7 @@ def _build_chunk_deployment(
 
 def _build_chunk_service(chunk_id: int) -> client.V1Service:
     """Build a ClusterIP Service for a single chunk."""
-    name = f"kai-chunk-{chunk_id}"
+    name = f"CAI-chunk-{chunk_id}"
     labels = {
         "app": APP_LABEL,
         "component": "chunk",
@@ -268,31 +268,31 @@ def _build_gateway_deployment(
 
     labels = {"app": APP_LABEL, "component": "gateway"}
     chunk_hosts = ",".join(
-        f"kai-chunk-{i}:{GRPC_PORT}" for i in range(num_chunks)
+        f"CAI-chunk-{i}:{GRPC_PORT}" for i in range(num_chunks)
     )
 
     gateway_env = [
         client.V1EnvVar(name="GATEWAY_PORT", value=str(GATEWAY_PORT)),
         client.V1EnvVar(name="CHUNK_HOSTS", value=chunk_hosts),
         client.V1EnvVar(
-            name="KAI_GATEWAY_ROUTE_POLICY",
-            value=os.environ.get("KAI_GATEWAY_ROUTE_POLICY", "deterministic-latency"),
+            name="CAI_GATEWAY_ROUTE_POLICY",
+            value=os.environ.get("CAI_GATEWAY_ROUTE_POLICY", "deterministic-latency"),
         ),
     ]
 
-    latency_json = os.environ.get("KAI_LINK_LATENCY_MS", "")
+    latency_json = os.environ.get("CAI_LINK_LATENCY_MS", "")
     if latency_json:
         gateway_env.append(
-            client.V1EnvVar(name="KAI_LINK_LATENCY_MS", value=latency_json)
+            client.V1EnvVar(name="CAI_LINK_LATENCY_MS", value=latency_json)
         )
 
     if nccl_enabled:
         gateway_env.extend([
-            client.V1EnvVar(name="KAI_NCCL_ENABLED", value="true"),
-            client.V1EnvVar(name="KAI_RDMA_ENABLED", value="true" if rdma_enabled else "false"),
+            client.V1EnvVar(name="CAI_NCCL_ENABLED", value="true"),
+            client.V1EnvVar(name="CAI_RDMA_ENABLED", value="true" if rdma_enabled else "false"),
         ])
 
-    gateway_selector = _parse_node_selector(os.environ.get("KAI_GATEWAY_NODE_SELECTOR", ""))
+    gateway_selector = _parse_node_selector(os.environ.get("CAI_GATEWAY_NODE_SELECTOR", ""))
 
     container = client.V1Container(
         name="gateway",
@@ -327,7 +327,7 @@ def _build_gateway_deployment(
         api_version="apps/v1",
         kind="Deployment",
         metadata=client.V1ObjectMeta(
-            name="kai-gateway", namespace=NAMESPACE, labels=labels,
+            name="CAI-gateway", namespace=NAMESPACE, labels=labels,
         ),
         spec=client.V1DeploymentSpec(
             replicas=1,
@@ -344,7 +344,7 @@ def _build_gateway_service() -> client.V1Service:
         api_version="v1",
         kind="Service",
         metadata=client.V1ObjectMeta(
-            name="kai-gateway", namespace=NAMESPACE, labels=labels,
+            name="CAI-gateway", namespace=NAMESPACE, labels=labels,
         ),
         spec=client.V1ServiceSpec(
             type="NodePort",
@@ -386,7 +386,7 @@ def _build_monitor_daemonset(
         "apiVersion": "apps/v1",
         "kind": "DaemonSet",
         "metadata": {
-            "name": "kai-monitor",
+            "name": "CAI-monitor",
             "namespace": NAMESPACE,
             "labels": labels,
         },
@@ -405,7 +405,7 @@ def _build_monitor_daemonset(
                             {"name": "GPU_INDEX", "value": "0"},
                             {"name": "SAMPLING_RATE", "value": str(sampling_rate)},
                             {"name": "ENABLE_GPU", "value": "false" if cpu_only else "true"},
-                            {"name": "KAI_ACCELERATOR_MODE", "value": "cpu" if cpu_only else "nvidia"},
+                            {"name": "CAI_ACCELERATOR_MODE", "value": "cpu" if cpu_only else "nvidia"},
                             {"name": "TDP_WATTS", "value": str(tdp_watts)},
                             {"name": "ENABLE_THRESHOLD", "value": str(enable_threshold).lower()},
                         ],
@@ -447,7 +447,7 @@ def _build_monitor_service() -> client.V1Service:
         api_version="v1",
         kind="Service",
         metadata=client.V1ObjectMeta(
-            name="kai-monitor", namespace=NAMESPACE, labels=labels,
+            name="CAI-monitor", namespace=NAMESPACE, labels=labels,
         ),
         spec=client.V1ServiceSpec(
             type="ClusterIP",
@@ -462,16 +462,16 @@ def _build_monitor_service() -> client.V1Service:
 
 
 # ---------------------------------------------------------------------------
-# KAIController
+# CAIController
 # ---------------------------------------------------------------------------
 
-class KAIController:
-    """Orchestrates the full KAI pipeline on Kubernetes.
+class CAIController:
+    """Orchestrates the full CAI pipeline on Kubernetes.
 
     Parameters
     ----------
     namespace : str
-        Kubernetes namespace (default: ``kai``).
+        Kubernetes namespace (default: ``CAI``).
     """
 
     def __init__(self, namespace: str = NAMESPACE):
@@ -512,7 +512,7 @@ class KAIController:
         self._num_chunks = num_chunks
 
         for i in range(num_chunks):
-            name = f"kai-chunk-{i}"
+            name = f"CAI-chunk-{i}"
 
             # Delete existing resources for idempotency
             _delete_if_exists(self.apps_v1.delete_namespaced_deployment, name)
@@ -562,12 +562,12 @@ class KAIController:
         _ensure_namespace(self.core_v1)
         self._num_chunks = num_chunks
 
-        _delete_if_exists(self.apps_v1.delete_namespaced_deployment, "kai-gateway")
-        _delete_if_exists(self.core_v1.delete_namespaced_service, "kai-gateway")
+        _delete_if_exists(self.apps_v1.delete_namespaced_deployment, "CAI-gateway")
+        _delete_if_exists(self.core_v1.delete_namespaced_service, "CAI-gateway")
 
         svc = _build_gateway_service()
         self.core_v1.create_namespaced_service(self.namespace, svc)
-        logger.info("Created Service kai-gateway (NodePort %d)", GATEWAY_NODE_PORT)
+        logger.info("Created Service CAI-gateway (NodePort %d)", GATEWAY_NODE_PORT)
 
         dep = _build_gateway_deployment(
             num_chunks,
@@ -576,7 +576,7 @@ class KAIController:
             nccl_enabled=nccl_enabled,
         )
         self.apps_v1.create_namespaced_deployment(self.namespace, dep)
-        logger.info("Created Deployment kai-gateway")
+        logger.info("Created Deployment CAI-gateway")
 
     def deploy_monitor(
         self,
@@ -603,13 +603,13 @@ class KAIController:
 
         # Delete existing
         _delete_if_exists(
-            self.apps_v1.delete_namespaced_daemon_set, "kai-monitor",
+            self.apps_v1.delete_namespaced_daemon_set, "CAI-monitor",
         )
-        _delete_if_exists(self.core_v1.delete_namespaced_service, "kai-monitor")
+        _delete_if_exists(self.core_v1.delete_namespaced_service, "CAI-monitor")
 
         svc = _build_monitor_service()
         self.core_v1.create_namespaced_service(self.namespace, svc)
-        logger.info("Created Service kai-monitor")
+        logger.info("Created Service CAI-monitor")
 
         ds_body = _build_monitor_daemonset(
             image,
@@ -619,7 +619,7 @@ class KAIController:
             cpu_only=cpu_only,
         )
         self.apps_v1.create_namespaced_daemon_set(self.namespace, ds_body)
-        logger.info("Created DaemonSet kai-monitor")
+        logger.info("Created DaemonSet CAI-monitor")
 
     def deploy_all(
         self,
@@ -663,7 +663,7 @@ class KAIController:
     # ------------------------------------------------------------------
 
     def wait_for_ready(self, timeout: float = 300.0, poll_interval: float = 5.0) -> bool:
-        """Poll pod status until all KAI pods are Running and Ready.
+        """Poll pod status until all CAI pods are Running and Ready.
 
         Parameters
         ----------
@@ -677,12 +677,12 @@ class KAIController:
         bool
             True if all pods became ready within the timeout.
         """
-        logger.info("Waiting for all KAI pods to be ready (timeout=%ds)...", int(timeout))
+        logger.info("Waiting for all CAI pods to be ready (timeout=%ds)...", int(timeout))
         start = time.monotonic()
 
         while time.monotonic() - start < timeout:
             pods = self.core_v1.list_namespaced_pod(
-                self.namespace, label_selector="app=kai",
+                self.namespace, label_selector="app=CAI",
             )
 
             total = len(pods.items)
@@ -720,9 +720,9 @@ class KAIController:
     # ------------------------------------------------------------------
 
     def get_status(self) -> Dict[str, Any]:
-        """Return the current status of all KAI pods."""
+        """Return the current status of all CAI pods."""
         pods = self.core_v1.list_namespaced_pod(
-            self.namespace, label_selector="app=kai",
+            self.namespace, label_selector="app=CAI",
         )
         result = []
         for pod in pods.items:
@@ -855,7 +855,7 @@ class KAIController:
         """
         pods = self.core_v1.list_namespaced_pod(
             self.namespace,
-            label_selector="app=kai,component=monitor",
+            label_selector="app=CAI,component=monitor",
         )
 
         results = []
@@ -904,7 +904,7 @@ class KAIController:
         """
         pods = self.core_v1.list_namespaced_pod(
             self.namespace,
-            label_selector="app=kai,component=monitor",
+            label_selector="app=CAI,component=monitor",
         )
 
         all_events: List[Dict[str, Any]] = []
@@ -992,7 +992,7 @@ class KAIController:
         # Build chunk-to-node mapping
         chunk_pods = self.core_v1.list_namespaced_pod(
             self.namespace,
-            label_selector="app=kai,component=chunk",
+            label_selector="app=CAI,component=chunk",
         )
         node_chunks: Dict[str, List[int]] = {}
         for pod in chunk_pods.items:
@@ -1131,7 +1131,7 @@ class KAIController:
         """Send a POST to all monitor pods."""
         pods = self.core_v1.list_namespaced_pod(
             self.namespace,
-            label_selector="app=kai,component=monitor",
+            label_selector="app=CAI,component=monitor",
         )
         results = []
         for pod in pods.items:
@@ -1159,17 +1159,17 @@ class KAIController:
     # ------------------------------------------------------------------
 
     def teardown(self) -> None:
-        """Delete all KAI resources from the namespace.
+        """Delete all CAI resources from the namespace.
 
         Removes deployments, services, and the DaemonSet. Does not
         delete the namespace itself to avoid removing any user data.
         """
-        logger.info("Tearing down KAI resources in namespace '%s'...", self.namespace)
+        logger.info("Tearing down CAI resources in namespace '%s'...", self.namespace)
 
         # Discover and delete chunk deployments + services
         # (supports any number of chunks)
         deps = self.apps_v1.list_namespaced_deployment(
-            self.namespace, label_selector="app=kai,component=chunk",
+            self.namespace, label_selector="app=CAI,component=chunk",
         )
         for dep in deps.items:
             name = dep.metadata.name
@@ -1177,15 +1177,15 @@ class KAIController:
             _delete_if_exists(self.core_v1.delete_namespaced_service, name)
 
         # Delete gateway
-        _delete_if_exists(self.apps_v1.delete_namespaced_deployment, "kai-gateway")
-        _delete_if_exists(self.core_v1.delete_namespaced_service, "kai-gateway")
+        _delete_if_exists(self.apps_v1.delete_namespaced_deployment, "CAI-gateway")
+        _delete_if_exists(self.core_v1.delete_namespaced_service, "CAI-gateway")
 
         # Delete monitor DaemonSet
-        _delete_if_exists(self.apps_v1.delete_namespaced_daemon_set, "kai-monitor")
-        _delete_if_exists(self.core_v1.delete_namespaced_service, "kai-monitor")
+        _delete_if_exists(self.apps_v1.delete_namespaced_daemon_set, "CAI-monitor")
+        _delete_if_exists(self.core_v1.delete_namespaced_service, "CAI-monitor")
 
         # Delete resource quota
-        _delete_if_exists(self.core_v1.delete_namespaced_resource_quota, "kai-gpu-quota")
+        _delete_if_exists(self.core_v1.delete_namespaced_resource_quota, "CAI-gpu-quota")
 
         logger.info("Teardown complete")
 
@@ -1196,7 +1196,7 @@ class KAIController:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="KAI Kubernetes Controller",
+        description="CAI Kubernetes Controller",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest="command", help="Command to execute")
@@ -1231,7 +1231,7 @@ def main():
     probe_p.add_argument("--samples", type=int, default=2)
 
     # teardown
-    sub.add_parser("teardown", help="Remove all KAI resources")
+    sub.add_parser("teardown", help="Remove all CAI resources")
 
     args = parser.parse_args()
 
@@ -1244,7 +1244,7 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    ctrl = KAIController()
+    ctrl = CAIController()
 
     if args.command == "deploy":
         ctrl.deploy_all(

@@ -1,4 +1,4 @@
-# Prompt Flow Diagram Guide for KAI System
+# Prompt Flow Diagram Guide for CAI System
 ## Detailed Low-Level Execution Steps for app.eraser
 
 ### **OVERVIEW**
@@ -35,7 +35,7 @@ This guide provides detailed step-by-step instructions for creating a comprehens
 ### **PHASE 1: USER INPUT → INITIALIZATION (Steps 1-8)**
 
 #### **Step 1: User Submits Prompt via CLI**
-- **Module**: `kai_cli.py::cmd_run()`
+- **Module**: `cai_cli.py::cmd_run()`
 - **Input**: Command-line arguments
   - `--model`: Model name (e.g., "sshleifer/tiny-gpt2")
   - `--prompt`: User text prompt
@@ -160,7 +160,7 @@ This guide provides detailed step-by-step instructions for creating a comprehens
 ### **PHASE 2: KUBERNETES DEPLOYMENT (Steps 9-14)**
 
 #### **Step 9: Push Chunk Files to Kubernetes ConfigMap/PVC**
-- **Module**: `kubernetes/controller.py::KAIController.upload_weights()`
+- **Module**: `kubernetes/controller.py::CAIController.upload_weights()`
 - **Input**: Chunk files from Step 8
 - **Process**:
   1. Create Kubernetes PersistentVolumeClaim (PVC) for weights
@@ -171,7 +171,7 @@ This guide provides detailed step-by-step instructions for creating a comprehens
 - **Visual**: Rectangle "K8s Weight Upload" → Cylinder "K8s PVC Storage"
 
 #### **Step 10: Deploy Chunk Servers to K8s Nodes**
-- **Module**: `kubernetes/controller.py::KAIController.deploy_chunks()`
+- **Module**: `kubernetes/controller.py::CAIController.deploy_chunks()`
 - **Input**: LayerChunk specifications + Deployment templates
 - **Process**:
   1. For each chunk i:
@@ -714,14 +714,14 @@ This guide provides detailed step-by-step instructions for creating a comprehens
 - **Visual**: Dashed rectangle "Energy Feedback Loop" (background process)
 
 #### **Step 42: Client Receives and Processes Response**
-- **Module**: `dashboard/app.py` or `kai_cli.py` (client side)
+- **Module**: `dashboard/app.py` or `cai_cli.py` (client side)
 - **Input**: HTTP response from Step 40
 - **Process**:
   1. Parse JSON response
   2. Extract text
   3. Display to user:
      ```
-     >>> python kai_cli.py run --prompt "Once upon a time"
+     >>> python cai_cli.py run --prompt "Once upon a time"
      
      Generated Text:
      "Once upon a time, there was a small village nestled in the mountains..."
@@ -808,7 +808,7 @@ When creating the diagram in app.eraser, use different arrow styles/colors for d
 #### **Phase 1: Create Container Structures**
 
 1. **Create Main Flow Container**
-   - Add a large container/swimlane labeled "KAI Inference System"
+   - Add a large container/swimlane labeled "CAI Inference System"
    - This will hold all phases
 
 2. **Create Sub-containers for Each Phase**
@@ -1065,4 +1065,4 @@ This guide provides complete step-by-step specifications for creating a comprehe
 4. Create the diagram systematically (Section 5)
 5. Verify completeness (Section 7)
 
-The resulting diagram will show exactly how a prompt flows through the KAI system from user input to final output, with all distributed inference details, network communication, and optional advanced features clearly illustrated.
+The resulting diagram will show exactly how a prompt flows through the CAI system from user input to final output, with all distributed inference details, network communication, and optional advanced features clearly illustrated.

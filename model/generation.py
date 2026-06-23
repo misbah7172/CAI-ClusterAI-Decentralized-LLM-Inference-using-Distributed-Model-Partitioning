@@ -1,5 +1,5 @@
 """
-Distributed text generation engine for KAI.
+Distributed text generation engine for CAI.
 
 Implements autoregressive token generation across distributed LayerChunks.
 Each chunk processes its assigned layers and passes hidden states to the
