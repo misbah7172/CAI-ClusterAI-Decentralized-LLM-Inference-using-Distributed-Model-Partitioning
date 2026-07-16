@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, CheckCircle2, Circle, Clock, GitMerge } from "lucide-react";
+import { CheckCircle2, Circle, Clock, GitMerge } from "lucide-react";
 
 export default function Roadmap() {
   const items = [
@@ -91,8 +91,8 @@ export default function Roadmap() {
 
                 {/* Content Block */}
                 <div className={`p-6 rounded-xl border transition-all duration-300 ${isActive
-                    ? "border-brand-cyan bg-slate-900/40 shadow-[0_0_15px_rgba(0,240,255,0.05)]"
-                    : "border-slate-900 bg-slate-950/20 hover:border-slate-800"
+                  ? "border-brand-cyan bg-slate-900/40 shadow-[0_0_15px_rgba(0,240,255,0.05)]"
+                  : "border-slate-900 bg-slate-950/20 hover:border-slate-800"
                   }`}>
                   {/* Mobile Quarter Tag */}
                   <span className="block md:hidden text-[10px] font-mono font-bold text-slate-500 mb-2 uppercase">
@@ -104,10 +104,10 @@ export default function Roadmap() {
                       {item.title}
                     </h3>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase border ${isCompleted
-                        ? "bg-slate-900 border-slate-800 text-slate-400"
-                        : isActive
-                          ? "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan"
-                          : "bg-slate-950 border-slate-900 text-slate-600"
+                      ? "bg-slate-900 border-slate-800 text-slate-400"
+                      : isActive
+                        ? "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan"
+                        : "bg-slate-950 border-slate-900 text-slate-600"
                       }`}>
                       {item.status}
                     </span>

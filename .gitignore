@@ -4,6 +4,7 @@ logs/k3s-node-token.txt
 # Python cache
 __pycache__/
 *.py[cod]
+*.pyc
 
 # Virtual environments
 .venv/
@@ -13,3 +14,14 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Build and Packaging
+build/
+dist/
+*.spec
+
+# Frontend/Node
+node_modules/
+.next/
+out/
+

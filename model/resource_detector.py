@@ -82,8 +82,8 @@ class ResourceDetector:
     """
 
     def __init__(self, mode: str = "local", namespace: str = "CAI"):
-        if mode not in ("local", "kubernetes"):
-            raise ValueError(f"mode must be 'local' or 'kubernetes', got '{mode}'")
+        if mode not in ("local", "kubernetes", "sandbox"):
+            raise ValueError(f"mode must be 'local', 'kubernetes', or 'sandbox', got '{mode}'")
         self.mode = mode
         self.namespace = namespace
 
@@ -97,6 +97,8 @@ class ResourceDetector:
         """
         if self.mode == "local":
             nodes = [self._scan_local()]
+        elif self.mode == "sandbox":
+            nodes = self._scan_sandbox_cluster()
         else:
             nodes = self._scan_kubernetes()
 
@@ -108,6 +110,37 @@ class ResourceDetector:
                 n.name, n.gpu_type, n.gpu_vram_mb, n.ram_mb, n.cpu_cores,
             )
         return nodes
+
+    def _scan_sandbox_cluster(self) -> List[NodeInfo]:
+        """Scan resources in the sandbox cluster via REST API."""
+        try:
+            import json
+            import urllib.request
+            from sandbox.config import SandboxConfig
+            config = SandboxConfig()
+            
+            url = f"http://localhost:{config.api_port}/api/v1/cluster/nodes"
+            req = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                nodes = []
+                for node in data.get("nodes", []):
+                    hw = node.get("hardware", {})
+                    nodes.append(
+                        NodeInfo(
+                            name=node["node_id"],
+                            gpu_vram_mb=float(hw.get("gpu_vram_mb", 0.0)),
+                            gpu_type=hw.get("gpu_type", "none"),
+                            ram_mb=float(hw.get("ram_mb", 0.0)),
+                            cpu_cores=int(hw.get("cpu_cores", 1)),
+                            has_gpu=bool(hw.get("has_gpu", False)),
+                            labels=node.get("labels", {}),
+                        )
+                    )
+                return nodes
+        except Exception as exc:
+            logger.warning("Failed to scan sandbox cluster via API: %s. Falling back to local node.", exc)
+            return [self._scan_local()]
 
     def scan_summary(self) -> Dict:
         """Return a summary of cluster resources.

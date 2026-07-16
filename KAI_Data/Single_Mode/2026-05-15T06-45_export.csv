@@ -1,0 +1,7 @@
+﻿Metric,Measurement
+Avg Latency (ms),45.3
+Throughput (tok/s),22.1
+Avg Power (W),38.5
+Energy per Inference (Wh),0.000321
+GPU Utilization (%),50-88%
+Peak Memory (MB),1024

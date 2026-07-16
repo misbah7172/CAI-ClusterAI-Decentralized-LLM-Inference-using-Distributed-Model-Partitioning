@@ -75,10 +75,10 @@ export default function BenchmarkChart() {
             <BarChart3 className="w-3.5 h-3.5" /> EMPIRICAL BENCHMARKS
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-            How CAI Compares on Real Hardware
+            How Cai Compares on Real Hardware
           </h2>
           <p className="text-slate-400 text-lg">
-            Direct comparison of a standard single high-end GPU execution versus CAI running distributed inference on consumer cards.
+            Direct comparison of a standard single high-end GPU execution versus Cai running distributed inference on consumer cards.
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export default function BenchmarkChart() {
                   </div>
                 </div>
 
-                {/* CAI Bar */}
+                {/* Cai Bar */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-bold">{current.caiLabel}</span>
@@ -156,7 +156,7 @@ export default function BenchmarkChart() {
                       style={{ width: `${caiPct}%` }}
                     />
                     <span className="absolute left-4 text-xs font-bold text-brand-green flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-brand-green animate-pulse" /> CAI Active
+                      <Zap className="w-3.5 h-3.5 text-brand-green animate-pulse" /> Cai Active
                     </span>
                   </div>
                 </div>
@@ -171,10 +171,10 @@ export default function BenchmarkChart() {
                 <div className="text-slate-400 space-y-1">
                   <p className="font-bold text-slate-300">Technical Tradeoff Disclosure</p>
                   <p>
-                    Distributed pipeline parallelism introduces serialization and network routing overhead. As shown, CAI takes a performance hit on latency and total throughput compared to a single enterprise RTX 4090.
+                    Distributed pipeline parallelism introduces serialization and network routing overhead. As shown, Cai takes a performance hit on latency and total throughput compared to a single enterprise RTX 4090.
                   </p>
                   <p className="text-[11px] text-brand-cyan">
-                    Key Wedge: CAI is designed for energy efficiency and accessibility, enabling massive model runs on affordable hardware.
+                    Key Wedge: Cai is designed for energy efficiency and accessibility, enabling massive model runs on affordable hardware.
                   </p>
                 </div>
               </div>

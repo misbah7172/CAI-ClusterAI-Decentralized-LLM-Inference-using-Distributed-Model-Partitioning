@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package Cai.sandbox;
+
+// ============================================================
+// CAI Sandbox — Node Agent gRPC Service
+//
+// Handles node registration, heartbeats, chunk assignment,
+// and model deployment in the decentralized sandbox cluster.
+//
+// The existing inference.proto (package CAI) is reused for
+// actual inference RPCs — this proto handles ONLY control-plane
+// communication between sandbox nodes.
+// ============================================================
+
+service NodeAgentService {
+    // Register a new node with the cluster primary.
+    rpc Register (RegisterRequest) returns (RegisterResponse);
+
+    // Periodic heartbeat from a worker node.
+    rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+
+    // Assign a model chunk to this node.
+    rpc AssignChunk (ChunkAssignment) returns (AssignmentResponse);
+
+    // Deploy a model to the cluster (primary orchestrates).
+    rpc DeployModel (DeployRequest) returns (DeployResponse);
+
+    // Query the status of a node.
+    rpc GetStatus (StatusRequest) returns (NodeStatusResponse);
+
+    // Deregister from the cluster (graceful leave).
+    rpc Deregister (DeregisterRequest) returns (DeregisterResponse);
+}
+
+
+// ============================================================
+// Registration
+// ============================================================
+
+message RegisterRequest {
+    string node_id = 1;
+    string access_token = 2;
+    HardwareInfo hardware = 3;
+    string role = 4;       // "primary" or "worker"
+    string version = 5;    // CAI sandbox version
+    string address = 6;    // Node's reachable address (ip:port)
+}
+
+message RegisterResponse {
+    bool accepted = 1;
+    string cluster_id = 2;
+    string message = 3;
+    string assigned_node_id = 4;    // Server may reassign node_id
+    ClusterInfo cluster_info = 5;   // Current cluster topology
+}
+
+message ClusterInfo {
+    string primary_id = 1;
+    string primary_address = 2;
+    repeated NodeSummary nodes = 3;
+}
+
+message NodeSummary {
+    string node_id = 1;
+    string role = 2;
+    string address = 3;
+    string status = 4;
+    HardwareInfo hardware = 5;
+}
+
+
+// ============================================================
+// Heartbeat
+// ============================================================
+
+message HeartbeatRequest {
+    string node_id = 1;
+    HardwareInfo hardware = 2;
+    EnergyMetrics energy = 3;
+    float load_pct = 4;
+    repeated int32 active_chunks = 5;
+    int64 uptime_s = 6;
+}
+
+message HeartbeatResponse {
+    bool acknowledged = 1;
+    // Commands the primary can push to the worker
+    repeated SchedulingCommand commands = 2;
+}
+
+message SchedulingCommand {
+    string command_type = 1;   // "assign_chunk", "release_chunk", "migrate", "shutdown"
+    string payload_json = 2;   // JSON-encoded command details
+}
+
+
+// ============================================================
+// Hardware & Energy
+// ============================================================
+
+message HardwareInfo {
+    string gpu_type = 1;
+    float gpu_vram_mb = 2;
+    float ram_mb = 3;
+    int32 cpu_cores = 4;
+    bool has_gpu = 5;
+    float power_draw_w = 6;
+    string hostname = 7;
+    string os_platform = 8;
+}
+
+message EnergyMetrics {
+    float current_power_w = 1;
+    float avg_power_w = 2;
+    float total_energy_wh = 3;
+    float gpu_utilization_pct = 4;
+    float cpu_utilization_pct = 5;
+    float gpu_temperature_c = 6;
+    string threshold_level = 7;  // "optimal", "warning", "critical"
+}
+
+
+// ============================================================
+// Chunk Assignment
+// ============================================================
+
+message ChunkAssignment {
+    int32 chunk_id = 1;
+    int32 num_chunks = 2;
+    string model_name = 3;
+    string weights_url = 4;     // URL to download chunk weights
+    bytes weights_data = 5;     // Inline weight data (for small chunks)
+    string model_type = 6;      // "transformer", "cnn"
+    string dtype = 7;           // "float16", "float32"
+}
+
+message AssignmentResponse {
+    bool success = 1;
+    string message = 2;
+    string chunk_endpoint = 3;  // host:port where chunk server is running
+    float load_time_ms = 4;
+}
+
+
+// ============================================================
+// Model Deployment
+// ============================================================
+
+message DeployRequest {
+    string model_name = 1;
+    int32 num_chunks = 2;
+    string strategy = 3;       // "balanced", "energy", "latency"
+    string dtype = 4;
+    repeated string target_nodes = 5;  // empty = auto-select
+}
+
+message DeployResponse {
+    bool success = 1;
+    string message = 2;
+    string deployment_id = 3;
+    repeated ChunkPlacement placements = 4;
+    string gateway_endpoint = 5;
+}
+
+message ChunkPlacement {
+    int32 chunk_id = 1;
+    string node_id = 2;
+    string endpoint = 3;
+    float memory_mb = 4;
+}
+
+
+// ============================================================
+// Status
+// ============================================================
+
+message StatusRequest {
+    string node_id = 1;   // Empty = request own status
+}
+
+message NodeStatusResponse {
+    string node_id = 1;
+    string state = 2;     // "active", "idle", "busy", "error"
+    HardwareInfo hardware = 3;
+    EnergyMetrics energy = 4;
+    repeated int32 active_chunks = 5;
+    float uptime_s = 6;
+    string version = 7;
+}
+
+
+// ============================================================
+// Deregistration
+// ============================================================
+
+message DeregisterRequest {
+    string node_id = 1;
+    string reason = 2;   // "user_request", "shutdown", "error"
+}
+
+message DeregisterResponse {
+    bool acknowledged = 1;
+    string message = 2;
+}

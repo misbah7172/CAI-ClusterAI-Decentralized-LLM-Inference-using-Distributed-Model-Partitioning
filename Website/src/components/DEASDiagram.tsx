@@ -65,8 +65,8 @@ export default function DEASDiagram() {
                   key={idx}
                   onClick={() => setActiveStep(idx)}
                   className={`p-5 rounded-xl border transition-all duration-300 cursor-pointer ${activeStep === idx
-                      ? "border-brand-cyan/40 bg-slate-900/60 shadow-[0_0_15px_rgba(0,240,255,0.05)]"
-                      : "border-slate-800 bg-slate-950/40 opacity-60 hover:opacity-90"
+                    ? "border-brand-cyan/40 bg-slate-900/60 shadow-[0_0_15px_rgba(0,240,255,0.05)]"
+                    : "border-slate-800 bg-slate-950/40 opacity-60 hover:opacity-90"
                     }`}
                 >
                   <div className="flex items-center gap-3 mb-2">
@@ -109,8 +109,8 @@ export default function DEASDiagram() {
               <div
                 onClick={() => setActiveStep(0)}
                 className={`absolute top-0 -translate-y-1/2 px-4 py-2 rounded-lg border font-mono text-xs cursor-pointer transition-all duration-300 flex items-center gap-2 ${activeStep === 0
-                    ? "border-brand-cyan bg-slate-900 text-white shadow-[0_0_15px_#00f0ff]"
-                    : "border-slate-800 bg-slate-950 text-slate-400"
+                  ? "border-brand-cyan bg-slate-900 text-white shadow-[0_0_15px_#00f0ff]"
+                  : "border-slate-800 bg-slate-950 text-slate-400"
                   }`}
               >
                 <Thermometer className="w-3.5 h-3.5 text-brand-cyan" /> MONITOR
@@ -120,8 +120,8 @@ export default function DEASDiagram() {
               <div
                 onClick={() => setActiveStep(1)}
                 className={`absolute bottom-6 right-0 translate-x-1/4 px-4 py-2 rounded-lg border font-mono text-xs cursor-pointer transition-all duration-300 flex items-center gap-2 ${activeStep === 1
-                    ? "border-accent-blue bg-slate-900 text-white shadow-[0_0_15px_#38bdf8]"
-                    : "border-slate-800 bg-slate-950 text-slate-400"
+                  ? "border-accent-blue bg-slate-900 text-white shadow-[0_0_15px_#38bdf8]"
+                  : "border-slate-800 bg-slate-950 text-slate-400"
                   }`}
               >
                 <Activity className="w-3.5 h-3.5 text-accent-blue" /> ANALYZE
@@ -131,8 +131,8 @@ export default function DEASDiagram() {
               <div
                 onClick={() => setActiveStep(2)}
                 className={`absolute bottom-6 left-0 -translate-x-1/4 px-4 py-2 rounded-lg border font-mono text-xs cursor-pointer transition-all duration-300 flex items-center gap-2 ${activeStep === 2
-                    ? "border-brand-green bg-slate-900 text-white shadow-[0_0_15px_#00ff66]"
-                    : "border-slate-800 bg-slate-950 text-slate-400"
+                  ? "border-brand-green bg-slate-900 text-white shadow-[0_0_15px_#00ff66]"
+                  : "border-slate-800 bg-slate-950 text-slate-400"
                   }`}
               >
                 <Zap className="w-3.5 h-3.5 text-brand-green" /> ADAPT

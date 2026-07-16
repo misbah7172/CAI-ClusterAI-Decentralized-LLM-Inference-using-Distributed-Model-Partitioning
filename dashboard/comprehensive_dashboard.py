@@ -1498,6 +1498,7 @@ page = st.sidebar.radio(
     [
         "Home",
         "Live Inference",
+        "Sandbox Manager",
         "Multi-Node Cluster",
         "Performance Monitor",
         "KV Cache Analytics",
@@ -3638,6 +3639,356 @@ def page_system_config():
         """
     )
 
+def page_sandbox_manager():
+    st.title(" CAI Sandbox Manager")
+    st.markdown("Deploy, manage, and simulate a decentralized CAI inference cluster from your desktop.")
+
+    # Status Check & Control Variables in session state
+    if "sandbox_active" not in st.session_state:
+        st.session_state["sandbox_active"] = False
+    if "sim_active" not in st.session_state:
+        st.session_state["sim_active"] = False
+    if "active_deployments_list" not in st.session_state:
+        st.session_state["active_deployments_list"] = []
+
+    # Import sandbox modules dynamically
+    try:
+        from sandbox.config import SandboxConfig, ClusterMode, NodeRole, NodeState
+        from sandbox.agent.node_agent import NodeAgent
+        from sandbox.discovery.discovery_service import ClusterDiscoveryService
+        from sandbox.controller.remote_controller import RemoteController
+        from sandbox.simulation.engine import SimulationEngine
+        from sandbox.auth.token_manager import TokenManager
+        from sandbox.simulation.hardware_profiles import list_profiles, get_profile
+        sandbox_available = True
+    except ImportError as e:
+        st.error(f"Failed to import sandbox modules. Verify they are in PYTHONPATH. Error: {e}")
+        sandbox_available = False
+        return
+
+    # Tabs for different operational areas
+    tab_cluster, tab_sim, tab_deploy = st.tabs([
+        " Control Plane & Nodes",
+        " Virtual Cluster Simulation",
+        " Model Deployment & Inference"
+    ])
+
+    with tab_cluster:
+        col_ctrl, col_status = st.columns([1, 2])
+
+        with col_ctrl:
+            st.subheader("Control Plane Settings")
+            if not st.session_state["sandbox_active"]:
+                mode_str = st.selectbox("Cluster Mode", ["single", "multi_primary", "multi_worker"])
+                role_str = st.selectbox("Node Role", ["primary", "worker"])
+                node_id = st.text_input("Node ID", value="desktop-primary-node")
+                grpc_port = st.number_input("gRPC Control Port", value=50100, min_value=1024, max_value=65535)
+                api_port = st.number_input("Controller API Port", value=8200, min_value=1024, max_value=65535)
+                
+                # Worker-specific configurations
+                primary_address = ""
+                access_token = ""
+                if role_str == "worker":
+                    primary_address = st.text_input("Primary Node Address (e.g. 192.168.1.10:50100)")
+                    access_token = st.text_input("Worker Join Token", type="password")
+
+                if st.button("🚀 Start Sandbox Control Plane", type="primary", use_container_width=True):
+                    with st.spinner("Starting Control Plane..."):
+                        try:
+                            # 1. Build config
+                            cfg = SandboxConfig(
+                                mode=ClusterMode(mode_str),
+                                role=NodeRole(role_str),
+                                node_id=node_id,
+                                grpc_port=grpc_port,
+                                api_port=api_port,
+                                primary_address=primary_address or f"localhost:{grpc_port}",
+                                access_token=access_token,
+                            )
+                            cfg.ensure_dirs()
+
+                            # 2. Start agent
+                            agent = NodeAgent(cfg)
+                            agent.start()
+                            st.session_state["sandbox_agent"] = agent
+
+                            # 3. If primary, start discovery, controller, api
+                            if cfg.role == NodeRole.PRIMARY:
+                                discovery = ClusterDiscoveryService(cfg)
+                                discovery.start()
+                                st.session_state["sandbox_discovery"] = discovery
+
+                                controller = RemoteController(agent, discovery, cfg)
+                                st.session_state["sandbox_controller"] = controller
+
+                                # Generate default token
+                                tm = TokenManager(token_dir=cfg.token_dir)
+                                default_token = tm.generate_cluster_token(agent.cluster_id, "worker")
+                                st.session_state["sandbox_token"] = default_token
+                            
+                            # 4. If worker, register
+                            elif cfg.role == NodeRole.WORKER and primary_address:
+                                registered = agent.register(primary_address, access_token)
+                                if not registered:
+                                    agent.stop()
+                                    raise ValueError("Registration rejected by primary node.")
+
+                            st.session_state["sandbox_active"] = True
+                            st.session_state["sandbox_cfg"] = cfg
+                            st.success("Control Plane started successfully!")
+                            st.rerun()
+                        except Exception as exc:
+                            st.error(f"Failed to start Control Plane: {exc}")
+            else:
+                cfg = st.session_state["sandbox_cfg"]
+                agent = st.session_state["sandbox_agent"]
+                
+                st.info(f"""
+                **Local Node Profile:**
+                - **Node ID**: `{agent.node_id}`
+                - **Role**: `{cfg.role.value.upper()}`
+                - **Cluster Mode**: `{cfg.mode.value.upper()}`
+                - **Status**: `ACTIVE`
+                """)
+
+                # Token display for Primary
+                if cfg.role == NodeRole.PRIMARY and "sandbox_token" in st.session_state:
+                    st.text_input("Worker Join Token", value=st.session_state["sandbox_token"], readonly=True, help="Copy this token to register worker nodes.")
+                
+                if st.button("🛑 Stop Control Plane", type="secondary", use_container_width=True):
+                    with st.spinner("Stopping Control Plane..."):
+                        if "sandbox_sim_engine" in st.session_state:
+                            st.session_state["sandbox_sim_engine"].stop_simulation()
+                            st.session_state.pop("sandbox_sim_engine")
+                            st.session_state["sim_active"] = False
+
+                        if "sandbox_discovery" in st.session_state:
+                            st.session_state["sandbox_discovery"].stop()
+                            st.session_state.pop("sandbox_discovery")
+                        
+                        if "sandbox_agent" in st.session_state:
+                            st.session_state["sandbox_agent"].stop()
+                            st.session_state.pop("sandbox_agent")
+
+                        st.session_state.pop("sandbox_controller", None)
+                        st.session_state["sandbox_active"] = False
+                        st.session_state["active_deployments_list"] = []
+                        st.success("Control Plane stopped.")
+                        st.rerun()
+
+        with col_status:
+            st.subheader("Cluster Node Registry")
+            if st.session_state["sandbox_active"] and "sandbox_controller" in st.session_state:
+                controller = st.session_state["sandbox_controller"]
+                nodes = controller.list_nodes()
+                
+                if nodes:
+                    node_df = pd.DataFrame(nodes)
+                    st.dataframe(node_df[[
+                        "node_id", "role", "address", "state", "has_gpu", "gpu_type", "gpu_vram_mb", "ram_mb", "cpu_cores"
+                    ]], use_container_width=True, hide_index=True)
+
+                    # Real-time resource metrics comparison chart
+                    st.subheader("Resource Distribution")
+                    metrics_cols = st.columns(3)
+                    with metrics_cols[0]:
+                        total_gpus = sum(1 for n in nodes if n.get("has_gpu"))
+                        st.metric("Total GPUs", total_gpus)
+                    with metrics_cols[1]:
+                        total_vram = sum(n.get("gpu_vram_mb", 0) for n in nodes) / 1024
+                        st.metric("Total VRAM", f"{total_vram:.1f} GB")
+                    with metrics_cols[2]:
+                        total_ram = sum(n.get("ram_mb", 0) for n in nodes) / 1024
+                        st.metric("Total System RAM", f"{total_ram:.1f} GB")
+
+                    # Draw topology bar chart
+                    fig = px.bar(
+                        node_df,
+                        x="node_id",
+                        y=["gpu_vram_mb", "ram_mb"],
+                        barmode="group",
+                        labels={"value": "Memory (MB)", "variable": "Resource"},
+                        title="Cluster Hardware Distribution",
+                        color_discrete_sequence=["#14b8a6", "#0d7377"]
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No nodes currently registered in cluster.")
+            else:
+                st.warning("Start the local Sandbox Control Plane to view cluster nodes.")
+
+    with tab_sim:
+        st.subheader("In-Process Virtual Node Simulation")
+        st.markdown("""
+        Simulation Engine spins up lightweight virtual worker agents in separate threads.
+        Each agent registers with the primary control plane and simulates live metrics and heartbeats.
+        """)
+
+        if not st.session_state["sandbox_active"]:
+            st.warning("⚠️ Control Plane must be active (and role must be PRIMARY) to run virtual simulations.")
+        else:
+            cfg = st.session_state["sandbox_cfg"]
+            if cfg.role != NodeRole.PRIMARY:
+                st.error("Simulation engine can only run on a PRIMARY node.")
+            else:
+                sim_col1, sim_col2 = st.columns(2)
+                with sim_col1:
+                    num_workers = st.slider("Number of Virtual Workers", 1, 5, 2)
+                    profile_mix = st.selectbox("Mix Strategy", ["mixed", "gpu", "cpu"])
+                    
+                    if not st.session_state["sim_active"]:
+                        if st.button("⚡ Spawn Simulated Workers", type="primary", use_container_width=True):
+                            with st.spinner("Spawning workers..."):
+                                discovery = st.session_state["sandbox_discovery"]
+                                engine = SimulationEngine(registry=discovery.registry)
+                                engine.simulate(num_nodes=num_workers, profile_type=profile_mix)
+                                st.session_state["sandbox_sim_engine"] = engine
+                                st.session_state["sim_active"] = True
+                                st.success(f"Spant {num_workers} virtual worker nodes!")
+                                st.rerun()
+                    else:
+                        if st.button("🛑 Terminate Virtual Simulation", type="secondary", use_container_width=True):
+                            with st.spinner("Stopping simulation..."):
+                                engine = st.session_state["sandbox_sim_engine"]
+                                engine.stop_simulation()
+                                st.session_state.pop("sandbox_sim_engine")
+                                st.session_state["sim_active"] = False
+                                st.success("All virtual simulated nodes stopped.")
+                                st.rerun()
+
+                with sim_col2:
+                    st.subheader("Available Virtual Profiles")
+                    profile_data = []
+                    for name in list_profiles():
+                        p = get_profile(name)
+                        profile_data.append({
+                            "Profile": p.name,
+                            "GPU Model": p.gpu_type,
+                            "VRAM (MB)": p.gpu_vram_mb,
+                            "RAM (MB)": p.ram_mb,
+                            "Cores": p.cpu_cores,
+                            "Max Power (W)": p.peak_power_w
+                        })
+                    st.dataframe(pd.DataFrame(profile_data), use_container_width=True, hide_index=True)
+
+                if st.session_state["sim_active"] and "sandbox_sim_engine" in st.session_state:
+                    st.divider()
+                    st.subheader("Live Telemetry Stream")
+                    engine = st.session_state["sandbox_sim_engine"]
+                    
+                    # Gather simulated node metrics
+                    sim_metrics = []
+                    with engine._lock:
+                        for nid, node in engine._nodes.items():
+                            info = node.get_info()
+                            met = info.get("metrics", {})
+                            sim_metrics.append({
+                                "Node ID": nid,
+                                "Status": info.get("state"),
+                                "GPU Temp (°C)": met.get("gpu_temperature_c", 0.0),
+                                "CPU Load (%)": met.get("cpu_utilization_pct", 0.0) * 100,
+                                "Power Draw (W)": met.get("power_draw_w", 0.0)
+                            })
+                    if sim_metrics:
+                        sim_metrics_df = pd.DataFrame(sim_metrics)
+                        st.dataframe(sim_metrics_df, use_container_width=True, hide_index=True)
+                        
+                        # Realtime power monitoring chart
+                        power_fig = px.bar(
+                            sim_metrics_df,
+                            x="Node ID",
+                            y="Power Draw (W)",
+                            title="Simulated Power Draw (Watts)",
+                            color="Power Draw (W)",
+                            color_continuous_scale="Viridis"
+                        )
+                        st.plotly_chart(power_fig, use_container_width=True)
+
+    with tab_deploy:
+        st.subheader("Distributed Model Placement & Inference")
+        if not st.session_state["sandbox_active"] or "sandbox_controller" not in st.session_state:
+            st.warning("⚠️ Launch the Control Plane to deploy models.")
+        else:
+            controller = st.session_state["sandbox_controller"]
+            
+            # 1. Deployment Panel
+            deploy_col1, deploy_col2 = st.columns([1, 1])
+            with deploy_col1:
+                st.markdown("### Deploy Model Partition")
+                model_name = st.selectbox("Select Model", list(MODEL_SIZES_MB.keys()), key="sandbox_deploy_model")
+                strategy = st.selectbox("Placement Strategy", ["balanced", "energy", "latency"], key="sandbox_deploy_strategy")
+                
+                nodes = controller.list_nodes()
+                num_chunks = st.number_input("Number of Chunks", value=len(nodes) or 1, min_value=1)
+                
+                if st.button("🚀 Deploy to Cluster", use_container_width=True):
+                    with st.spinner("Partitioning model and deploying..."):
+                        res = controller.deploy_model(
+                            model_name=model_name,
+                            num_chunks=num_chunks,
+                            strategy=strategy,
+                        )
+                        if res.get("success"):
+                            st.session_state["active_deployments_list"].append({
+                                "deployment_id": res["deployment_id"],
+                                "model_name": model_name,
+                                "placements": res["placements"]
+                            })
+                            st.success(f"Deployed model successfully! ID: {res['deployment_id']}")
+                        else:
+                            st.error(f"Deployment failed: {res.get('message')}")
+            
+            with deploy_col2:
+                st.markdown("### Active Placements")
+                if st.session_state["active_deployments_list"]:
+                    for dep in st.session_state["active_deployments_list"]:
+                        with st.expander(f"Deployment: {dep['model_name']} ({dep['deployment_id']})"):
+                            place_df = pd.DataFrame(dep["placements"])
+                            st.dataframe(place_df, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No active model deployments on cluster.")
+
+            # 2. Text Generation Panel
+            st.divider()
+            st.markdown("### Run Distributed Inference")
+            prompt = st.text_area("Input Prompt", value="The CAI Sandbox is an isolated environment designed to")
+            inf_col1, inf_col2 = st.columns(2)
+            with inf_col1:
+                max_tokens = st.slider("Max Tokens", 5, 200, 30)
+            with inf_col2:
+                temperature = st.slider("Temperature", 0.0, 1.2, 0.7)
+
+            if st.button("🔮 Generate Text", type="primary", use_container_width=True):
+                if not st.session_state["active_deployments_list"]:
+                    st.error("No deployed model found. Please deploy a model first.")
+                else:
+                    target_model = st.session_state["active_deployments_list"][-1]["model_name"]
+                    with st.spinner(f"Routing request to cluster for model '{target_model}'..."):
+                        try:
+                            inf_res = controller.trigger_inference(
+                                model_name=target_model,
+                                prompt=prompt,
+                                max_tokens=max_tokens,
+                                temperature=temperature
+                            )
+                            if inf_res.get("success"):
+                                st.success("Inference completed successfully!")
+                                st.markdown(f"**Generated Text:**")
+                                st.info(inf_res.get("text", ""))
+                                
+                                # Display metrics
+                                if "completion" in inf_res and inf_res["completion"]:
+                                    comp = inf_res["completion"]
+                                    metric_cols = st.columns(3)
+                                    metric_cols[0].metric("Tokens Generated", comp.get("tokens_generated", 0))
+                                    metric_cols[1].metric("Throughput", f"{comp.get('tokens_per_second', 0.0):.2f} Tok/s")
+                                    metric_cols[2].metric("Total Time", f"{comp.get('time_taken_s', 0.0):.2f} s")
+                            else:
+                                st.error(f"Inference failed: {inf_res.get('message')}")
+                        except Exception as exc:
+                            st.error(f"Error executing inference: {exc}")
+
+
 # ============================================================================
 # MAIN APP
 # ============================================================================
@@ -3647,6 +3998,8 @@ def main():
         page_home()
     elif page == "Live Inference":
         page_live_inference()
+    elif page == "Sandbox Manager":
+        page_sandbox_manager()
     elif page == "Multi-Node Cluster":
         page_multi_node_cluster()
     elif page == "Performance Monitor":

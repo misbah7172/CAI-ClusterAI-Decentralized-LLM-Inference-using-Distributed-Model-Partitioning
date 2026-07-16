@@ -414,11 +414,25 @@ def cmd_benchmark(args):
 def cmd_dashboard(args):
     """Launch the comprehensive Streamlit dashboard."""
     app_file = "dashboard/comprehensive_dashboard.py"
-    print(f"[CAI] Launching Comprehensive Dashboard ({os.path.basename(app_file)})...")
+    page = getattr(args, "page", "Home")
+    print(f"[CAI] Launching Comprehensive Dashboard ({os.path.basename(app_file)}) → page: {page}")
     cmd = [
         sys.executable, "-m", "streamlit", "run", app_file,
         "--server.headless", "true",
         "--server.port", str(args.port),
+    ]
+    subprocess.run(cmd)
+
+
+def cmd_sandbox_dashboard(args):
+    """Launch the dashboard and open directly on the Sandbox Manager page."""
+    app_file = "dashboard/comprehensive_dashboard.py"
+    print("[CAI] Launching CAI Sandbox Manager Desktop Dashboard...")
+    print("      → Navigate to 'Sandbox Manager' in the sidebar once the browser opens.")
+    cmd = [
+        sys.executable, "-m", "streamlit", "run", app_file,
+        "--server.port", str(args.port),
+        "--browser.gatherUsageStats", "false",
     ]
     subprocess.run(cmd)
 
@@ -1428,6 +1442,15 @@ def main():
                              help="Launch the legacy analysis-only dashboard")
     dash_parser.set_defaults(func=cmd_dashboard)
 
+    # --- sandbox-dashboard (Desktop GUI for Sandbox Manager) ---
+    sbdash_parser = subparsers.add_parser(
+        "sandbox-dashboard",
+        help="Launch the CAI Sandbox Manager desktop GUI (Streamlit)"
+    )
+    sbdash_parser.add_argument("--port", type=int, default=8502,
+                               help="Port to run sandbox dashboard on (default: 8502)")
+    sbdash_parser.set_defaults(func=cmd_sandbox_dashboard)
+
     # --- build ---
     build_parser = subparsers.add_parser("build", help="Build Docker images for CAI")
     build_parser.add_argument("--tag", default="CAI:latest", help="Base image tag")
@@ -1645,6 +1668,16 @@ def main():
     sim_parser.add_argument("--trust-remote-code", action="store_true")
     sim_parser.add_argument("--token", default=None)
     sim_parser.set_defaults(func=cmd_simulate)
+
+    # --- sandbox (Decentralized sandbox platform) ---
+    sandbox_parser = subparsers.add_parser("sandbox", help="Sandbox-based decentralized node platform")
+    sandbox_parser.add_argument("sandbox_args", nargs=argparse.REMAINDER, help="Arguments passed to sandbox/cli.py")
+
+    def cmd_sandbox(args):
+        from sandbox.cli import main as sandbox_main
+        sandbox_main(args.sandbox_args)
+
+    sandbox_parser.set_defaults(func=cmd_sandbox)
 
     args = parser.parse_args()
 

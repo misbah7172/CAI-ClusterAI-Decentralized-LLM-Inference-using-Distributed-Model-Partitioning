@@ -35,7 +35,7 @@ export default function SandboxSection() {
                 Simulate Before Deploying
               </h3>
               <p className="text-slate-400 text-sm leading-relaxed">
-                CAI's Sandbox Mode spins up multiple virtual gRPC chunk servers bound to local ports. You can scan virtual RAM budgets, draft auto-partition schemas, and debug pipeline serialization overhead locally.
+                CAI&apo;s Sandbox Mode spins up multiple virtual gRPC chunk servers bound to local ports. You can scan virtual RAM budgets, draft auto-partition schemas, and debug pipeline serialization overhead locally.
               </p>
             </div>
 

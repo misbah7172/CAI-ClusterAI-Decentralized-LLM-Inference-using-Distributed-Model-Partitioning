@@ -18,10 +18,10 @@ export default function ArchitectureDiagram() {
             <Network className="w-4.5 h-4.5" /> Pipeline Parallelism
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-            How CAI Works: Layer-Wise Pipeline
+            How Cai Works: Layer-Wise Pipeline
           </h2>
           <p className="text-slate-400 text-lg">
-            CAI partitions massive neural network models at transformer block boundaries. Each node only loads and executes its assigned subset of layers.
+            Cai partitions massive neural network models at transformer block boundaries. Each node only loads and executes its assigned subset of layers.
           </p>
         </div>
 
@@ -40,7 +40,7 @@ export default function ArchitectureDiagram() {
                   <p className="text-slate-400 text-xs font-mono">e.g. Phi-2 (32 Layers)</p>
                 </div>
                 <p className="text-slate-500 text-xs leading-relaxed">
-                  The model layers are extracted at startup. Instead of loading all weights to one GPU, CAI prepares them for pipeline chunking.
+                  The model layers are extracted at startup. Instead of loading all weights to one GPU, Cai prepares them for pipeline chunking.
                 </p>
               </div>
 
@@ -70,8 +70,8 @@ export default function ArchitectureDiagram() {
                 {/* Node 1 */}
                 <div
                   className={`w-full md:w-[28%] p-4 rounded-xl border transition-all duration-300 ${hoveredNode === 1
-                      ? "border-brand-cyan bg-slate-900/60 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
-                      : "border-slate-800 bg-slate-950/80"
+                    ? "border-brand-cyan bg-slate-900/60 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
+                    : "border-slate-800 bg-slate-950/80"
                     }`}
                   onMouseEnter={() => setHoveredNode(1)}
                   onMouseLeave={() => setHoveredNode(null)}
@@ -92,8 +92,8 @@ export default function ArchitectureDiagram() {
                 {/* Node 2 */}
                 <div
                   className={`w-full md:w-[28%] p-4 rounded-xl border transition-all duration-300 ${hoveredNode === 2
-                      ? "border-brand-cyan bg-slate-900/60 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
-                      : "border-slate-800 bg-slate-950/80"
+                    ? "border-brand-cyan bg-slate-900/60 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
+                    : "border-slate-800 bg-slate-950/80"
                     }`}
                   onMouseEnter={() => setHoveredNode(2)}
                   onMouseLeave={() => setHoveredNode(null)}
@@ -114,8 +114,8 @@ export default function ArchitectureDiagram() {
                 {/* Node 3 */}
                 <div
                   className={`w-full md:w-[28%] p-4 rounded-xl border transition-all duration-300 ${hoveredNode === 3
-                      ? "border-brand-green bg-slate-900/60 shadow-[0_0_15px_rgba(0,255,102,0.15)]"
-                      : "border-slate-800 bg-slate-950/80"
+                    ? "border-brand-green bg-slate-900/60 shadow-[0_0_15px_rgba(0,255,102,0.15)]"
+                    : "border-slate-800 bg-slate-950/80"
                     }`}
                   onMouseEnter={() => setHoveredNode(3)}
                   onMouseLeave={() => setHoveredNode(null)}
@@ -174,7 +174,7 @@ export default function ArchitectureDiagram() {
 
         {/* Small descriptive text footer */}
         <div className="text-center font-mono text-[10px] text-slate-500">
-          *COMMUNICATION LAYER OVERHEAD IN CAI STAYS BELOW 0.38MS VIA HIGH-FREQUENCY CACHED LATENCY PROBES.
+          *COMMUNICATION LAYER OVERHEAD IN Cai STAYS BELOW 0.38MS VIA HIGH-FREQUENCY CACHED LATENCY PROBES.
         </div>
       </div>
     </section>

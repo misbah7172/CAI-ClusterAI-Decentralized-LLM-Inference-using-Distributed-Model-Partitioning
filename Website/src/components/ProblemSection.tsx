@@ -28,8 +28,8 @@ export default function ProblemSection() {
             <button
               onClick={() => setActiveTab("standard")}
               className={`px-5 py-2.5 rounded-lg text-sm font-medium font-mono transition-all duration-300 ${activeTab === "standard"
-                  ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                  : "text-slate-400 hover:text-white"
+                ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                : "text-slate-400 hover:text-white"
                 }`}
             >
               Standard Execution
@@ -37,8 +37,8 @@ export default function ProblemSection() {
             <button
               onClick={() => setActiveTab("CAI")}
               className={`px-5 py-2.5 rounded-lg text-sm font-medium font-mono transition-all duration-300 ${activeTab === "CAI"
-                  ? "bg-brand-green/10 text-brand-green border border-brand-green/20 shadow-[0_0_15px_rgba(0,255,102,0.1)]"
-                  : "text-slate-400 hover:text-white"
+                ? "bg-brand-green/10 text-brand-green border border-brand-green/20 shadow-[0_0_15px_rgba(0,255,102,0.1)]"
+                : "text-slate-400 hover:text-white"
                 }`}
             >
               CAI Orchestrated

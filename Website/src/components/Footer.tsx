@@ -1,6 +1,6 @@
 "use client";
 
-import { Cpu, BookOpen, ExternalLink, Activity } from "lucide-react";
+import { ExternalLink, Activity } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -45,8 +45,8 @@ export default function Footer() {
             <h4 className="text-white font-mono text-xs font-bold uppercase tracking-widest">Project</h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <a href="#architecture" className="hover:text-brand-cyan transition-colors duration-200">
-                  How It Works
+                <a href="/architecture" className="hover:text-brand-cyan transition-colors duration-200">
+                  Architecture
                 </a>
               </li>
               <li>

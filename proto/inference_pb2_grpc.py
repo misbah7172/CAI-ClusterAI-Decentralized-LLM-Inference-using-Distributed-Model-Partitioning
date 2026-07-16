@@ -3,9 +3,9 @@
 import grpc
 import warnings
 
-import inference_pb2 as inference__pb2
+from proto import inference_pb2 as proto_dot_inference__pb2
 
-GRPC_GENERATED_VERSION = '1.78.0'
+GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in inference_pb2_grpc.py depends on'
+        + ' but the generated code in proto/inference_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -39,28 +39,28 @@ class InferenceServiceStub(object):
         """
         self.Infer = channel.unary_unary(
                 '/CAI.InferenceService/Infer',
-                request_serializer=inference__pb2.InferRequest.SerializeToString,
-                response_deserializer=inference__pb2.InferResponse.FromString,
+                request_serializer=proto_dot_inference__pb2.InferRequest.SerializeToString,
+                response_deserializer=proto_dot_inference__pb2.InferResponse.FromString,
                 _registered_method=True)
         self.HealthCheck = channel.unary_unary(
                 '/CAI.InferenceService/HealthCheck',
-                request_serializer=inference__pb2.HealthRequest.SerializeToString,
-                response_deserializer=inference__pb2.HealthResponse.FromString,
+                request_serializer=proto_dot_inference__pb2.HealthRequest.SerializeToString,
+                response_deserializer=proto_dot_inference__pb2.HealthResponse.FromString,
                 _registered_method=True)
         self.Pause = channel.unary_unary(
                 '/CAI.InferenceService/Pause',
-                request_serializer=inference__pb2.PauseRequest.SerializeToString,
-                response_deserializer=inference__pb2.PauseResponse.FromString,
+                request_serializer=proto_dot_inference__pb2.PauseRequest.SerializeToString,
+                response_deserializer=proto_dot_inference__pb2.PauseResponse.FromString,
                 _registered_method=True)
         self.Checkpoint = channel.unary_unary(
                 '/CAI.InferenceService/Checkpoint',
-                request_serializer=inference__pb2.CheckpointRequest.SerializeToString,
-                response_deserializer=inference__pb2.CheckpointResponse.FromString,
+                request_serializer=proto_dot_inference__pb2.CheckpointRequest.SerializeToString,
+                response_deserializer=proto_dot_inference__pb2.CheckpointResponse.FromString,
                 _registered_method=True)
         self.Resume = channel.unary_unary(
                 '/CAI.InferenceService/Resume',
-                request_serializer=inference__pb2.ResumeRequest.SerializeToString,
-                response_deserializer=inference__pb2.ResumeResponse.FromString,
+                request_serializer=proto_dot_inference__pb2.ResumeRequest.SerializeToString,
+                response_deserializer=proto_dot_inference__pb2.ResumeResponse.FromString,
                 _registered_method=True)
 
 
@@ -110,28 +110,28 @@ def add_InferenceServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Infer': grpc.unary_unary_rpc_method_handler(
                     servicer.Infer,
-                    request_deserializer=inference__pb2.InferRequest.FromString,
-                    response_serializer=inference__pb2.InferResponse.SerializeToString,
+                    request_deserializer=proto_dot_inference__pb2.InferRequest.FromString,
+                    response_serializer=proto_dot_inference__pb2.InferResponse.SerializeToString,
             ),
             'HealthCheck': grpc.unary_unary_rpc_method_handler(
                     servicer.HealthCheck,
-                    request_deserializer=inference__pb2.HealthRequest.FromString,
-                    response_serializer=inference__pb2.HealthResponse.SerializeToString,
+                    request_deserializer=proto_dot_inference__pb2.HealthRequest.FromString,
+                    response_serializer=proto_dot_inference__pb2.HealthResponse.SerializeToString,
             ),
             'Pause': grpc.unary_unary_rpc_method_handler(
                     servicer.Pause,
-                    request_deserializer=inference__pb2.PauseRequest.FromString,
-                    response_serializer=inference__pb2.PauseResponse.SerializeToString,
+                    request_deserializer=proto_dot_inference__pb2.PauseRequest.FromString,
+                    response_serializer=proto_dot_inference__pb2.PauseResponse.SerializeToString,
             ),
             'Checkpoint': grpc.unary_unary_rpc_method_handler(
                     servicer.Checkpoint,
-                    request_deserializer=inference__pb2.CheckpointRequest.FromString,
-                    response_serializer=inference__pb2.CheckpointResponse.SerializeToString,
+                    request_deserializer=proto_dot_inference__pb2.CheckpointRequest.FromString,
+                    response_serializer=proto_dot_inference__pb2.CheckpointResponse.SerializeToString,
             ),
             'Resume': grpc.unary_unary_rpc_method_handler(
                     servicer.Resume,
-                    request_deserializer=inference__pb2.ResumeRequest.FromString,
-                    response_serializer=inference__pb2.ResumeResponse.SerializeToString,
+                    request_deserializer=proto_dot_inference__pb2.ResumeRequest.FromString,
+                    response_serializer=proto_dot_inference__pb2.ResumeResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -162,8 +162,8 @@ class InferenceService(object):
             request,
             target,
             '/CAI.InferenceService/Infer',
-            inference__pb2.InferRequest.SerializeToString,
-            inference__pb2.InferResponse.FromString,
+            proto_dot_inference__pb2.InferRequest.SerializeToString,
+            proto_dot_inference__pb2.InferResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -189,8 +189,8 @@ class InferenceService(object):
             request,
             target,
             '/CAI.InferenceService/HealthCheck',
-            inference__pb2.HealthRequest.SerializeToString,
-            inference__pb2.HealthResponse.FromString,
+            proto_dot_inference__pb2.HealthRequest.SerializeToString,
+            proto_dot_inference__pb2.HealthResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -216,8 +216,8 @@ class InferenceService(object):
             request,
             target,
             '/CAI.InferenceService/Pause',
-            inference__pb2.PauseRequest.SerializeToString,
-            inference__pb2.PauseResponse.FromString,
+            proto_dot_inference__pb2.PauseRequest.SerializeToString,
+            proto_dot_inference__pb2.PauseResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -243,8 +243,8 @@ class InferenceService(object):
             request,
             target,
             '/CAI.InferenceService/Checkpoint',
-            inference__pb2.CheckpointRequest.SerializeToString,
-            inference__pb2.CheckpointResponse.FromString,
+            proto_dot_inference__pb2.CheckpointRequest.SerializeToString,
+            proto_dot_inference__pb2.CheckpointResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -270,8 +270,8 @@ class InferenceService(object):
             request,
             target,
             '/CAI.InferenceService/Resume',
-            inference__pb2.ResumeRequest.SerializeToString,
-            inference__pb2.ResumeResponse.FromString,
+            proto_dot_inference__pb2.ResumeRequest.SerializeToString,
+            proto_dot_inference__pb2.ResumeResponse.FromString,
             options,
             channel_credentials,
             insecure,
